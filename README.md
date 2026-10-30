@@ -1,6 +1,16 @@
-# NationDroid 1.3.0
+# NationDroid 1.4.0
 
 A native, non-root Android launcher for Android 8.0 and newer, with four selectable home modes. No account, internet permission, advertising SDK or subscription is required.
+
+## Device Admin, Accessibility and screen pinning
+
+Open **Settings → Device Admin, Accessibility & pinning**.
+
+- **Accessibility shortcuts:** explicitly enable the local toggle and the Android service named **NationDroid — lock and device controls**. Buttons request Home, Back, Recents, notification shade, quick settings, power menu and screen lock. Unlisted actions are rejected. The service still requests no window-content retrieval, event subscriptions, input capture or gesture dispatch. Disable the toggle or revoke Accessibility access at any time.
+- **Optional Device Admin locking:** a separate Android activation screen requests only the `force-lock` policy. No wipe-data, password-reset, camera-disable or device-owner policy is requested. You can deactivate it on the same controls page or in Android settings; deactivate before uninstalling. Admin locking can require your PIN/password/pattern at the next unlock. Explicit Lock device now and double-tap locking can use active admin authority when Accessibility locking is unavailable.
+- **Kiosk-style screen pinning:** request pinning of the NationDroid task with local confirmation and Android's normal screen-pinning prompt. Exit through the controls page or Android's standard unpin gesture (device-dependent, commonly Back + Recents or swipe up and hold). Pinning can block launching other apps until you unpin. This does not provision device ownership, silently enforce a kiosk, suppress Android's escape gesture or lock down the entire device.
+
+These permissions do not grant root, access to another app's private storage, universal notification redaction, or full device access. Android can restrict global actions while pinned. Permission grants, admin activation and active pinning are never restored from JSON settings backups. Screen-pinning behavior and admin activation/deactivation need testing on the actual phone.
 
 ## Private notifications
 
@@ -37,10 +47,10 @@ The current mode defaults to Desktop for existing installations. Pins from 1.0/1
 
 1. Open NationDroid **Settings** and enable **Double-tap to lock** under **Gestures**.
 2. Open **Accessibility lock service**, read the disclosure, and choose **Open Accessibility settings**.
-3. Under Android Accessibility's Installed apps / Downloaded apps, enable **NationDroid — double-tap lock**.
+3. Under Android Accessibility's Installed apps / Downloaded apps, enable **NationDroid — lock and device controls**.
 4. Return home and double tap empty home-screen space to request Android's lock-screen action.
 
-Both the local toggle and user-enabled service are required. Disable the toggle or revoke the service in Android settings at any time. The service does not subscribe to accessibility events, retrieve screen contents, capture input, or dispatch gestures. It requests only `GLOBAL_ACTION_LOCK_SCREEN` following the launcher's gesture. No root or device-admin access is needed.
+The local toggle plus either the user-enabled Accessibility service or separately activated Device Admin locking is required. Disable the toggle or revoke the relevant Android authority at any time. The service does not subscribe to accessibility events, retrieve screen contents, capture input, or dispatch gestures. The double-tap path requests `GLOBAL_ACTION_LOCK_SCREEN`; the separately enabled device-controls page also supports the allowlisted manual navigation actions above. Device Admin is optional and can serve as an alternate locking mechanism; root is not needed.
 
 App tiles, settings panels and taskbar controls do not trigger locking. Swipes, long presses, multitouch and interrupted tap pairs are excluded. The gesture is disabled during TalkBack touch exploration. Android 8 can run NationDroid, but this lock action requires Android 9 or newer. This gesture operates inside NationDroid, not on top of other apps.
 
@@ -92,7 +102,7 @@ Use the downloadable debug APK, or open GitHub **Actions → Build NationDroid A
 
 To set it as Home, choose **Settings → Set as default launcher**. To switch back, use Android Settings → Apps → Default apps → Home app.
 
-The application ID remains `com.nationdroid.launcher`; version 1.3.0 has version code 5. An APK signed with the same certificate upgrades the previous version and retains local preferences. GitHub runners can generate different debug signing keys across builds; installing an APK with a different key requires removing the old installation and its preferences. Use a stable private release key for distribution; no key is committed.
+The application ID remains `com.nationdroid.launcher`; version 1.4.0 has version code 6. An APK signed with the same certificate upgrades the previous version and retains local preferences. GitHub runners can generate different debug signing keys across builds; installing an APK with a different key requires removing the old installation and its preferences. Use a stable private release key for distribution; no key is committed.
 
 ## Build and test
 

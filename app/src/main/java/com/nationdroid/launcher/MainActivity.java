@@ -104,6 +104,7 @@ public final class MainActivity extends Activity {
                 gestures.getScaledTouchSlop(),gestures.getScaledDoubleTapSlop());
         optionsRevision = prefs.getInt("revision",0);
         buildDesktop();
+        handlePinning(getIntent());
         if (Build.VERSION.SDK_INT >= 33) getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
                 android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::backToDesktop);
         IntentFilter filter = new IntentFilter();
@@ -445,7 +446,7 @@ public final class MainActivity extends Activity {
                                 .setPositiveButton("OK", null).show());
                 break;
             default:
-                card("NationDroid 1.3.0", "Independent native Android desktop launcher", () -> {});
+                card("NationDroid 1.4.0", "Independent native Android desktop launcher", () -> {});
                 card("Android " + Build.VERSION.RELEASE, Build.MANUFACTURER + " " + Build.MODEL, () -> open(new Intent(Settings.ACTION_DEVICE_INFO_SETTINGS)));
                 break;
         }
@@ -732,7 +733,7 @@ public final class MainActivity extends Activity {
                     case MotionEvent.ACTION_MOVE: lockGesture.move(x,y); break;
                     case MotionEvent.ACTION_UP:
                         if(lockGesture.up(event.getEventTime(),x,y,isEmptyHomeAt(x,y))) {
-                            if(!LockScreenService.requestLock())toast("Enable NationDroid's lock service in Settings → Accessibility lock service.");
+                            if(!LockScreenService.requestLock() && !NationDeviceAdmin.lock(this))toast("Enable NationDroid's Accessibility lock service or optional Device Admin locking.");
                         }
                         break;
                     case MotionEvent.ACTION_CANCEL: lockGesture.reset(); break;
@@ -782,7 +783,25 @@ public final class MainActivity extends Activity {
         animateHome();
     }
     @Override protected void onPause() {resumed=false;if(lockGesture!=null)lockGesture.reset();if(homeModes!=null)homeModes.setActive(false);handler.removeCallbacks(tick);super.onPause();}
-    @Override protected void onNewIntent(Intent intent) {super.onNewIntent(intent);setIntent(intent);if(startWindow!=null)startWindow.minimize();if(settingsWindow!=null)settingsWindow.minimize();}
+    @Override protected void onNewIntent(Intent intent) {super.onNewIntent(intent);setIntent(intent);if(startWindow!=null)startWindow.minimize();if(settingsWindow!=null)settingsWindow.minimize();handlePinning(intent);}
+    private void handlePinning(Intent intent) {
+        if(intent.getBooleanExtra(DeviceControlsActivity.STOP_PINNING,false)) {
+            intent.removeExtra(DeviceControlsActivity.STOP_PINNING);
+            new AlertDialog.Builder(this).setTitle("Exit screen pinning?")
+                    .setMessage("Stop pinning the NationDroid task? Android's standard unpin gesture is also available.")
+                    .setNegativeButton("Cancel",null).setPositiveButton("Exit pinning",(d,w)->{
+                        try{stopLockTask();toast("Screen pinning exit requested.");}catch(SecurityException|IllegalStateException e){toast("Use Android's standard unpin gesture to exit.");}
+                    }).show();
+        }
+        if(intent.getBooleanExtra(DeviceControlsActivity.PIN_HOME,false)) {
+            intent.removeExtra(DeviceControlsActivity.PIN_HOME);
+            new AlertDialog.Builder(this).setTitle("Confirm screen-pinning request")
+                    .setMessage("Request Android's user-confirmed pinning for NationDroid? You can exit using Android's unpin gesture. This does not create a managed kiosk.")
+                    .setNegativeButton("Cancel",null).setPositiveButton("Request pinning",(d,w)->{
+                        try{startLockTask();}catch(SecurityException|IllegalStateException e){toast("Enable screen pinning in Android security settings, then try again.");}
+                    }).show();
+        }
+    }
     @Override public void onBackPressed() {backToDesktop();}
     @Override protected void onDestroy() {if(registered){unregisterReceiver(packages);unregisterReceiver(badgesChanged);}handler.removeCallbacksAndMessages(null);worker.shutdownNow();super.onDestroy();}
     static final class AppEntry {

@@ -91,9 +91,11 @@ public final class LauncherOptionsActivity extends Activity {
         section("LAYOUT");
         card("Launcher mode",modeName(),()->showPage("modes"));
         card("Home screen options","Sphere motion, app selection, dock and icon sizes",()->showPage("home"));
+        section("DEVICE CONTROLS");
+        card("Device Admin, Accessibility & pinning","Navigation shortcuts, optional admin locking and user-confirmed screen pinning",()->open(new Intent(this,DeviceControlsActivity.class)));
         section("GESTURES");
         if(Build.VERSION.SDK_INT>=28) {
-            toggle("Double-tap to lock","Double tap empty home-screen space; requires the optional Accessibility lock service","doubleTapLock",false,false);
+            toggle("Double-tap to lock","Double tap empty home space; requires Accessibility locking or active Device Admin","doubleTapLock",false,false);
             card("Accessibility lock service",LockScreenService.isConnected()?"Connected — ready to lock":"Not connected — tap to enable in Android settings",this::explainLockService);
             note("This gesture is disabled while TalkBack touch exploration is active, so it does not replace TalkBack's double-tap action.");
         } else note("Double-tap Accessibility locking requires Android 9 or newer. Other launcher features remain available on Android 8.");
@@ -128,7 +130,7 @@ public final class LauncherOptionsActivity extends Activity {
         section("BACKUP & RESTORE");
         card("Export settings","Save modes, pins and preferences to a JSON file",()->openForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json").putExtra(Intent.EXTRA_TITLE,"NationDroid-settings.json"),201));
         card("Restore settings","Import a NationDroid JSON backup",()->openForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json"),202));
-        section("ABOUT");note("NationDroid 1.3.0 · All implemented options are available without a subscription. No third-party launcher code or premium entitlement is included. Device private-space management and third-party widgets are not implemented.");
+        section("ABOUT");note("NationDroid 1.4.0 · All implemented options are available without a subscription. No third-party launcher code or premium entitlement is included. Device private-space management and third-party widgets are not implemented.");
     }
     private void modePage(){
         note("CHOOSE HOW YOUR HOME SCREEN LOOKS");
@@ -200,7 +202,7 @@ public final class LauncherOptionsActivity extends Activity {
     }
     private void explainLockService(){
         new AlertDialog.Builder(this).setTitle("Enable double-tap locking")
-                .setMessage("NationDroid uses its Accessibility service only to request Android's lock-screen action. It does not read screen contents, record input, or perform gestures.\n\nOpen Android Accessibility settings, select NationDroid — double-tap lock (usually under Installed apps), and enable it. Keep Double-tap to lock enabled in NationDroid as well. You can revoke access at any time.")
+                .setMessage("NationDroid uses Accessibility for double-tap locking and, when separately enabled, user-invoked navigation and device-control shortcuts. It does not read screen contents, record input, or dispatch gestures.\n\nOpen Android Accessibility settings, select NationDroid — lock and device controls (usually under Installed apps), and enable it. Keep Double-tap to lock enabled in NationDroid as well. You can revoke access at any time.")
                 .setNegativeButton("Cancel",null).setPositiveButton("Open Accessibility settings",(dialog,which)->open(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))).show();
     }
     @Override protected void onResume(){super.onResume();if(prefs!=null&&"root".equals(page))render();}
