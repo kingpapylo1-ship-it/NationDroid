@@ -1,6 +1,26 @@
-# NationDroid 1.4.0
+# NationDroid 1.5.0
 
-A native, non-root Android launcher for Android 8.0 and newer, with four selectable home modes. No account, internet permission, advertising SDK or subscription is required.
+A native, non-root Android launcher for Android 8.0 and newer, with four selectable home modes. No account, advertising SDK or subscription is required. Internet access is used by the built-in browser; launcher preferences and private notification data are not sent to websites.
+
+## Built-in NationDroid Browser
+
+The desktop Browser shortcut and **Settings → NationDroid Browser** open the built-in Android System WebView browser. It uses DuckDuckGo's website for the home page and searches. This is an independent browser, not the official DuckDuckGo application or its tracking-protection engine.
+
+- Address/search bar; up to six tabs with close/select controls; Back, Forward and Reload.
+- Bookmarks stored locally, find in page, text zoom, user-invoked sharing and Android printing.
+- Confirmed HTTPS downloads using Android DownloadManager and a Downloads link. Android 10+ saves to public Downloads; Android 8/9 saves to the app's external Downloads directory, which can be removed on uninstall. Cookie-authenticated and blob downloads are not implemented; use another browser for those.
+- User-selected document uploads through Android's file picker. Websites cannot read files or Contacts automatically. Website camera/microphone and geolocation requests are denied.
+- Third-party cookies, file/content navigation and mixed content are blocked. Android Safe Browsing is enabled when supported by the installed WebView. TLS certificate errors are canceled, not bypassed. Typed HTTP URLs are upgraded to HTTPS; HTTP-only websites are unsupported.
+- Clear browsing data closes all tabs and clears WebView cookies, cache, tab history, site storage and saved HTTP authentication. Bookmarks and downloaded files are retained; bookmarks can be removed separately.
+- An optional default-browser chooser, plus native error/retry and form-resubmission confirmation screens.
+
+Browsing needs connectivity and a working/up-to-date Android System WebView. Websites/search providers receive normal network requests, searches, IP information and first-party cookies; third-party-cookie blocking does not guarantee anonymity or complete tracking protection. No incognito/profile isolation or DuckDuckGo tracker-blocking engine is claimed. Browser data is separate from launcher JSON settings backups.
+
+## Welcome after reboot
+
+A customizable banner appears once on the first foreground NationDroid home visit per device boot. When NationDroid is the default Home app, this normally occurs after unlocking following a reboot. It does not open an activity from the background or bypass the lock screen.
+
+Under **Settings → Welcome after reboot**, enable/disable it or edit **Welcome message**. Use `{name}` to insert the local profile name. The banner can be tapped to dismiss and otherwise disappears after eight seconds. Boot-count tracking avoids repeating it on ordinary Home visits; a BOOT_COMPLETED receiver provides a fallback pending marker. Boot markers are not part of settings backups. Android can defer boot delivery for force-stopped/unopened apps; the foreground boot-count check handles the next launcher visit where available.
 
 ## Device Admin, Accessibility and screen pinning
 
@@ -86,7 +106,7 @@ The in-settings sphere preview uses available app icons. Preview sensing and idl
 
 ## Desktop features retained
 
-- This device, Files and Browser shortcuts, plus pinned app shortcuts.
+- This device, Files and built-in Browser shortcuts, plus pinned app shortcuts.
 - Bottom taskbar with Start, Files, Settings and a clock.
 - Start provides installed-app search and pin/info/uninstall actions.
 - Native internal Start/desktop Settings windows: minimize, close, maximize/restore, title-caption dragging and bottom-right resize grip.
@@ -102,7 +122,7 @@ Use the downloadable debug APK, or open GitHub **Actions → Build NationDroid A
 
 To set it as Home, choose **Settings → Set as default launcher**. To switch back, use Android Settings → Apps → Default apps → Home app.
 
-The application ID remains `com.nationdroid.launcher`; version 1.4.0 has version code 6. An APK signed with the same certificate upgrades the previous version and retains local preferences. GitHub runners can generate different debug signing keys across builds; installing an APK with a different key requires removing the old installation and its preferences. Use a stable private release key for distribution; no key is committed.
+The application ID remains `com.nationdroid.launcher`; version 1.5.0 has version code 7. An APK signed with the same certificate upgrades the previous version and retains local preferences. GitHub runners can generate different debug signing keys across builds; installing an APK with a different key requires removing the old installation and its preferences. Use a stable private release key for distribution; no key is committed.
 
 ## Build and test
 

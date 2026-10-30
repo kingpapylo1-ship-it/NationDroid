@@ -68,6 +68,7 @@ public final class MainActivity extends Activity {
     private boolean registered, loading, reloadRequested;
     private HomeModesView homeModes;
     private boolean resumed;
+    private final Runnable welcomeTask=this::showBootWelcome;
     private DoubleTapLockGesture lockGesture;
     private final int[] touchLocation=new int[2];
     private int optionsRevision;
@@ -223,7 +224,7 @@ public final class MainActivity extends Activity {
         addDesktopIcon(icons, "This device", "▣", 0xff56d9ff, null, () -> showSettings("System"), null);
         addDesktopIcon(icons, "Files", "▰", 0xffffcb57, null, this::openFiles, null);
         addDesktopIcon(icons, "Browser", "◎", 0xff8bc9ff, null,
-                () -> open(Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_BROWSER)), null);
+                () -> open(new Intent(this,BrowserActivity.class)), null);
         for (AppEntry app : visibleApps()) if (favorites.contains(app.key())) {
             addDesktopIcon(icons, app.label, null, WHITE, app.icon, () -> launch(app), app);
         }
@@ -440,13 +441,13 @@ public final class MainActivity extends Activity {
                 break;
             case "Privacy & security":
                 card("Security", "Open Android security settings", () -> open(new Intent(Settings.ACTION_SECURITY_SETTINGS)));
-                card("Local preferences", "Pins stay on this device. No account, analytics or network permission.",
+                card("Local preferences", "Pins stay on this device. No account or analytics. The built-in browser uses internet access.",
                         () -> new AlertDialog.Builder(this).setTitle("Local preferences")
                                 .setMessage("NationDroid stores pinned app identifiers and wallpaper settings in app-private storage. Clearing app storage removes them. Android confirms uninstall requests.")
                                 .setPositiveButton("OK", null).show());
                 break;
             default:
-                card("NationDroid 1.4.0", "Independent native Android desktop launcher", () -> {});
+                card("NationDroid 1.5.0", "Independent native Android desktop launcher", () -> {});
                 card("Android " + Build.VERSION.RELEASE, Build.MANUFACTURER + " " + Build.MODEL, () -> open(new Intent(Settings.ACTION_DEVICE_INFO_SETTINGS)));
                 break;
         }
@@ -746,6 +747,8 @@ public final class MainActivity extends Activity {
     private boolean isEmptyHomeAt(float x,float y) {
         if(workspace==null || (startWindow!=null && startWindow.getVisibility()==View.VISIBLE)
                 || (settingsWindow!=null && settingsWindow.getVisibility()==View.VISIBLE))return false;
+        View welcome=workspace.findViewWithTag("welcome-banner");
+        if(welcome!=null&&welcome.getVisibility()==View.VISIBLE){welcome.getLocationOnScreen(touchLocation);if(x>=touchLocation[0]&&x<touchLocation[0]+welcome.getWidth()&&y>=touchLocation[1]&&y<touchLocation[1]+welcome.getHeight())return false;}
         View home=workspace.findViewWithTag("desktop-icons");
         return home!=null && emptyPoint(home,x,y);
     }
@@ -771,6 +774,17 @@ public final class MainActivity extends Activity {
         boolean scroll=view instanceof ScrollView || view instanceof android.widget.HorizontalScrollView;
         return scroll || (!view.isClickable() && !view.isLongClickable());
     }
+    private void showBootWelcome() {
+        if(!resumed||isDestroyed()||workspace==null)return;
+        int boot=Settings.Global.getInt(getContentResolver(),Settings.Global.BOOT_COUNT,-1);
+        if(!WelcomeRules.shouldShow(prefs.getBoolean("welcomeEnabled",true),boot,prefs.getInt("lastWelcomeBoot",-1),prefs.getBoolean("welcomePending",true)))return;
+        prefs.edit().putInt("lastWelcomeBoot",boot).putBoolean("welcomePending",false).apply();
+        View old=workspace.findViewWithTag("welcome-banner");if(old!=null)workspace.removeView(old);
+        TextView greeting=text(WelcomeRules.message(prefs.getString("welcomeMessage",WelcomeRules.DEFAULT),prefs.getString("profileName","King Nation")),16,WHITE);
+        greeting.setTag("welcome-banner");greeting.setPadding(dp(16),dp(14),dp(16),dp(14));greeting.setBackground(panel(0xf02b3a50,12));greeting.setElevation(dp(18));greeting.setMaxLines(4);greeting.setContentDescription(greeting.getText());
+        FrameLayout.LayoutParams position=new FrameLayout.LayoutParams(-1,-2,Gravity.TOP);position.setMargins(dp(12),dp(12),dp(12),0);workspace.addView(greeting,position);
+        greeting.setOnClickListener(v->workspace.removeView(greeting));handler.postDelayed(()->{if(greeting.getParent() instanceof android.view.ViewGroup)((android.view.ViewGroup)greeting.getParent()).removeView(greeting);},8000);
+    }
     private void updateTaskbar() {
         startButton.setBackground(startWindow!=null && startWindow.getVisibility()==View.VISIBLE?panel(0xff414957,7):selectable());
         settingsButton.setBackground(settingsWindow!=null && settingsWindow.getVisibility()==View.VISIBLE?panel(0xff414957,7):selectable());
@@ -780,9 +794,9 @@ public final class MainActivity extends Activity {
         if (prefs.getInt("revision",0)!=optionsRevision) { recreate(); return; }
         if (homeModes!=null) homeModes.setActive(true);
         handler.removeCallbacks(tick);handler.post(tick);loadApps();
-        animateHome();
+        animateHome();handler.removeCallbacks(welcomeTask);handler.postDelayed(welcomeTask,450);
     }
-    @Override protected void onPause() {resumed=false;if(lockGesture!=null)lockGesture.reset();if(homeModes!=null)homeModes.setActive(false);handler.removeCallbacks(tick);super.onPause();}
+    @Override protected void onPause() {resumed=false;handler.removeCallbacks(welcomeTask);if(lockGesture!=null)lockGesture.reset();if(homeModes!=null)homeModes.setActive(false);handler.removeCallbacks(tick);super.onPause();}
     @Override protected void onNewIntent(Intent intent) {super.onNewIntent(intent);setIntent(intent);if(startWindow!=null)startWindow.minimize();if(settingsWindow!=null)settingsWindow.minimize();handlePinning(intent);}
     private void handlePinning(Intent intent) {
         if(intent.getBooleanExtra(DeviceControlsActivity.STOP_PINNING,false)) {

@@ -91,6 +91,10 @@ public final class LauncherOptionsActivity extends Activity {
         section("LAYOUT");
         card("Launcher mode",modeName(),()->showPage("modes"));
         card("Home screen options","Sphere motion, app selection, dock and icon sizes",()->showPage("home"));
+        section("BROWSER & WELCOME");
+        card("NationDroid Browser","Tabs, DuckDuckGo search, bookmarks and clear browsing data",()->open(new Intent(this,BrowserActivity.class)));
+        toggle("Welcome after reboot","Show once when NationDroid first opens each boot","welcomeEnabled",true,false);
+        card("Welcome message",prefs.getString("welcomeMessage",WelcomeRules.DEFAULT),this::editWelcome);
         section("DEVICE CONTROLS");
         card("Device Admin, Accessibility & pinning","Navigation shortcuts, optional admin locking and user-confirmed screen pinning",()->open(new Intent(this,DeviceControlsActivity.class)));
         section("GESTURES");
@@ -130,7 +134,7 @@ public final class LauncherOptionsActivity extends Activity {
         section("BACKUP & RESTORE");
         card("Export settings","Save modes, pins and preferences to a JSON file",()->openForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json").putExtra(Intent.EXTRA_TITLE,"NationDroid-settings.json"),201));
         card("Restore settings","Import a NationDroid JSON backup",()->openForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json"),202));
-        section("ABOUT");note("NationDroid 1.4.0 · All implemented options are available without a subscription. No third-party launcher code or premium entitlement is included. Device private-space management and third-party widgets are not implemented.");
+        section("ABOUT");note("NationDroid 1.5.0 · All implemented options are available without a subscription. No third-party launcher code or premium entitlement is included. Device private-space management and third-party widgets are not implemented.");
     }
     private void modePage(){
         note("CHOOSE HOW YOUR HOME SCREEN LOOKS");
@@ -199,6 +203,12 @@ public final class LauncherOptionsActivity extends Activity {
         String current=prefs.getString(key,initial);int chosen=0;for(int i=0;i<values.length;i++)if(values[i].equals(current))chosen=i;
         final int checked=chosen;card(title,labels[chosen],()->new AlertDialog.Builder(this).setTitle(title).setSingleChoiceItems(labels,checked,(d,i)->{
             prefs.edit().putString(key,values[i]).apply();changed();d.dismiss();render();}).setNegativeButton("Cancel",null).show());
+    }
+    private void editWelcome(){
+        EditText message=new EditText(this);message.setText(prefs.getString("welcomeMessage",WelcomeRules.DEFAULT));message.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(240)});
+        new AlertDialog.Builder(this).setTitle("Welcome message — use {name} for your profile name").setView(message)
+                .setNegativeButton("Cancel",null).setNeutralButton("Preview",(d,w)->new AlertDialog.Builder(this).setTitle("Welcome preview").setMessage(WelcomeRules.message(message.getText().toString(),prefs.getString("profileName","King Nation"))).setPositiveButton("OK",null).show())
+                .setPositiveButton("Save",(d,w)->{String value=message.getText().toString().trim();prefs.edit().putString("welcomeMessage",value.isEmpty()?WelcomeRules.DEFAULT:value).apply();changed();render();}).show();
     }
     private void explainLockService(){
         new AlertDialog.Builder(this).setTitle("Enable double-tap locking")
