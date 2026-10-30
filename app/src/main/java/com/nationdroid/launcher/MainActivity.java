@@ -68,6 +68,8 @@ public final class MainActivity extends Activity {
     private boolean registered, loading, reloadRequested;
     private HomeModesView homeModes;
     private boolean resumed;
+    private DoubleTapLockGesture lockGesture;
+    private final int[] touchLocation=new int[2];
     private int optionsRevision;
     private AppEntry pendingLaunch;
     private final BroadcastReceiver badgesChanged = new BroadcastReceiver() {
@@ -97,6 +99,9 @@ public final class MainActivity extends Activity {
         favorites = new HashSet<>(prefs.getStringSet("favorites", new HashSet<>()));
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER);
         getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+        android.view.ViewConfiguration gestures=android.view.ViewConfiguration.get(this);
+        lockGesture=new DoubleTapLockGesture(android.view.ViewConfiguration.getDoubleTapTimeout(),250,
+                gestures.getScaledTouchSlop(),gestures.getScaledDoubleTapSlop());
         optionsRevision = prefs.getInt("revision",0);
         buildDesktop();
         if (Build.VERSION.SDK_INT >= 33) getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
@@ -437,7 +442,7 @@ public final class MainActivity extends Activity {
                                 .setPositiveButton("OK", null).show());
                 break;
             default:
-                card("NationDroid 1.2.0", "Independent native Android desktop launcher", () -> {});
+                card("NationDroid 1.2.1", "Independent native Android desktop launcher", () -> {});
                 card("Android " + Build.VERSION.RELEASE, Build.MANUFACTURER + " " + Build.MODEL, () -> open(new Intent(Settings.ACTION_DEVICE_INFO_SETTINGS)));
                 break;
         }
@@ -710,6 +715,58 @@ public final class MainActivity extends Activity {
         if(v==null)return;v.invalidate();
         if(v instanceof android.view.ViewGroup){android.view.ViewGroup group=(android.view.ViewGroup)v;for(int i=0;i<group.getChildCount();i++)invalidateTree(group.getChildAt(i));}
     }
+    @Override public boolean dispatchTouchEvent(MotionEvent event) {
+        if(lockGesture!=null) {
+            android.view.accessibility.AccessibilityManager accessibility=(android.view.accessibility.AccessibilityManager)getSystemService(ACCESSIBILITY_SERVICE);
+            boolean enabled=Build.VERSION.SDK_INT>=28 && resumed && prefs.getBoolean("doubleTapLock",false)
+                    && (accessibility==null || !accessibility.isTouchExplorationEnabled());
+            if(!enabled)lockGesture.reset();
+            else if(event.getPointerCount()!=1)lockGesture.reset();
+            else {
+                float x=event.getRawX(),y=event.getRawY();
+                switch(event.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN: lockGesture.down(event.getEventTime(),x,y,isEmptyHomeAt(x,y)); break;
+                    case MotionEvent.ACTION_MOVE: lockGesture.move(x,y); break;
+                    case MotionEvent.ACTION_UP:
+                        if(lockGesture.up(event.getEventTime(),x,y,isEmptyHomeAt(x,y))) {
+                            if(!LockScreenService.requestLock())toast("Enable NationDroid's lock service in Settings → Accessibility lock service.");
+                        }
+                        break;
+                    case MotionEvent.ACTION_CANCEL: lockGesture.reset(); break;
+                    default: break;
+                }
+            }
+        }
+        return super.dispatchTouchEvent(event);
+    }
+    private boolean isEmptyHomeAt(float x,float y) {
+        if(workspace==null || (startWindow!=null && startWindow.getVisibility()==View.VISIBLE)
+                || (settingsWindow!=null && settingsWindow.getVisibility()==View.VISIBLE))return false;
+        View home=workspace.findViewWithTag("desktop-icons");
+        return home!=null && emptyPoint(home,x,y);
+    }
+    private boolean emptyPoint(View view,float x,float y) {
+        if(view.getVisibility()!=View.VISIBLE)return false;
+        view.getLocationOnScreen(touchLocation);
+        float localX=x-touchLocation[0],localY=y-touchLocation[1];
+        if(localX<0 || localY<0 || localX>=view.getWidth() || localY>=view.getHeight())return false;
+        if(view instanceof HoloSphereView)return ((HoloSphereView)view).isEmptyAt(localX,localY);
+        if(view instanceof android.view.ViewGroup) {
+            android.view.ViewGroup group=(android.view.ViewGroup)view;
+            for(int i=group.getChildCount()-1;i>=0;i--) {
+                View child=group.getChildAt(i);
+                child.getLocationOnScreen(touchLocation);
+                if(child.getVisibility()==View.VISIBLE && x>=touchLocation[0] && y>=touchLocation[1]
+                        && x<touchLocation[0]+child.getWidth() && y<touchLocation[1]+child.getHeight()) {
+                    if(!emptyPoint(child,x,y))return false;
+                    break;
+                }
+            }
+        }
+        // Scroll containers may support a desktop context menu; blank content is still empty.
+        boolean scroll=view instanceof ScrollView || view instanceof android.widget.HorizontalScrollView;
+        return scroll || (!view.isClickable() && !view.isLongClickable());
+    }
     private void updateTaskbar() {
         startButton.setBackground(startWindow!=null && startWindow.getVisibility()==View.VISIBLE?panel(0xff414957,7):selectable());
         settingsButton.setBackground(settingsWindow!=null && settingsWindow.getVisibility()==View.VISIBLE?panel(0xff414957,7):selectable());
@@ -721,7 +778,7 @@ public final class MainActivity extends Activity {
         handler.removeCallbacks(tick);handler.post(tick);loadApps();
         animateHome();
     }
-    @Override protected void onPause() {resumed=false;if(homeModes!=null)homeModes.setActive(false);handler.removeCallbacks(tick);super.onPause();}
+    @Override protected void onPause() {resumed=false;if(lockGesture!=null)lockGesture.reset();if(homeModes!=null)homeModes.setActive(false);handler.removeCallbacks(tick);super.onPause();}
     @Override protected void onNewIntent(Intent intent) {super.onNewIntent(intent);setIntent(intent);if(startWindow!=null)startWindow.minimize();if(settingsWindow!=null)settingsWindow.minimize();}
     @Override public void onBackPressed() {backToDesktop();}
     @Override protected void onDestroy() {if(registered){unregisterReceiver(packages);unregisterReceiver(badgesChanged);}handler.removeCallbacksAndMessages(null);worker.shutdownNow();super.onDestroy();}

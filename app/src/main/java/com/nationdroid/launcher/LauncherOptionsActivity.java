@@ -91,6 +91,12 @@ public final class LauncherOptionsActivity extends Activity {
         section("LAYOUT");
         card("Launcher mode",modeName(),()->showPage("modes"));
         card("Home screen options","Sphere motion, app selection, dock and icon sizes",()->showPage("home"));
+        section("GESTURES");
+        if(Build.VERSION.SDK_INT>=28) {
+            toggle("Double-tap to lock","Double tap empty home-screen space; requires the optional Accessibility lock service","doubleTapLock",false,false);
+            card("Accessibility lock service",LockScreenService.isConnected()?"Connected — ready to lock":"Not connected — tap to enable in Android settings",this::explainLockService);
+            note("This gesture is disabled while TalkBack touch exploration is active, so it does not replace TalkBack's double-tap action.");
+        } else note("Double-tap Accessibility locking requires Android 9 or newer. Other launcher features remain available on Android 8.");
         section("STYLE");
         card("Theme presets","Choose Ocean, Violet or Forest",()->new AlertDialog.Builder(this).setTitle("Theme preset").setItems(new String[]{"Ocean","Violet","Forest"},(d,i)->{
             int[] colors={0xff2766e9,0xff7649dc,0xff098777};prefs.edit().putInt("accent",colors[i]).putBoolean("dark",i!=0).apply();changed();render();}).show());
@@ -121,7 +127,7 @@ public final class LauncherOptionsActivity extends Activity {
         section("BACKUP & RESTORE");
         card("Export settings","Save modes, pins and preferences to a JSON file",()->openForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json").putExtra(Intent.EXTRA_TITLE,"NationDroid-settings.json"),201));
         card("Restore settings","Import a NationDroid JSON backup",()->openForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json"),202));
-        section("ABOUT");note("NationDroid 1.2.0 · All implemented options are available without a subscription. No third-party launcher code or premium entitlement is included. Device private-space management and third-party widgets are not implemented.");
+        section("ABOUT");note("NationDroid 1.2.1 · All implemented options are available without a subscription. No third-party launcher code or premium entitlement is included. Device private-space management and third-party widgets are not implemented.");
     }
     private void modePage(){
         note("CHOOSE HOW YOUR HOME SCREEN LOOKS");
@@ -184,13 +190,19 @@ public final class LauncherOptionsActivity extends Activity {
         toggle.setThumbTintList(new android.content.res.ColorStateList(new int[][]{new int[]{android.R.attr.state_checked},new int[]{}},new int[]{LauncherStyle.accent(prefs),0xff9aa3b5}));
         toggle.setTrackTintList(android.content.res.ColorStateList.valueOf(LauncherStyle.accent(prefs)&0x55ffffff));
         toggle.setContentDescription(title);toggle.setChecked(prefs.getBoolean(key,defaultValue));toggle.setMinWidth(dp(52));row.addView(toggle);card.addView(row);
-        toggle.setOnCheckedChangeListener((v,checked)->{prefs.edit().putBoolean(key,checked).apply();changed();if("badges".equals(key)&&checked){NotificationListenerService.requestRebind(new ComponentName(this,NotificationBadges.class));toast("Enable NationDroid under Notification access to show dots.");}if(redraw)render();else if(preview!=null)preview.invalidate();});
+        toggle.setOnCheckedChangeListener((v,checked)->{prefs.edit().putBoolean(key,checked).apply();changed();if("badges".equals(key)&&checked){NotificationListenerService.requestRebind(new ComponentName(this,NotificationBadges.class));toast("Enable NationDroid under Notification access to show dots.");}if("doubleTapLock".equals(key)&&checked&&!LockScreenService.isConnected())explainLockService();if(redraw)render();else if(preview!=null)preview.invalidate();});
     }
     private void choice(String title,String key,String[] labels,String[] values,String initial){
         String current=prefs.getString(key,initial);int chosen=0;for(int i=0;i<values.length;i++)if(values[i].equals(current))chosen=i;
         final int checked=chosen;card(title,labels[chosen],()->new AlertDialog.Builder(this).setTitle(title).setSingleChoiceItems(labels,checked,(d,i)->{
             prefs.edit().putString(key,values[i]).apply();changed();d.dismiss();render();}).setNegativeButton("Cancel",null).show());
     }
+    private void explainLockService(){
+        new AlertDialog.Builder(this).setTitle("Enable double-tap locking")
+                .setMessage("NationDroid uses its Accessibility service only to request Android's lock-screen action. It does not read screen contents, record input, or perform gestures.\n\nOpen Android Accessibility settings, select NationDroid — double-tap lock (usually under Installed apps), and enable it. Keep Double-tap to lock enabled in NationDroid as well. You can revoke access at any time.")
+                .setNegativeButton("Cancel",null).setPositiveButton("Open Accessibility settings",(dialog,which)->open(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))).show();
+    }
+    @Override protected void onResume(){super.onResume();if(prefs!=null&&"root".equals(page))render();}
     private void changed(){prefs.edit().putInt("revision",prefs.getInt("revision",0)+1).apply();}
     private void showPage(String value){page=value;render();}
     private String modeName(){String mode=prefs.getString("mode","desktop");for(int i=0;i<MODE_IDS.length;i++)if(MODE_IDS[i].equals(mode))return MODE_NAMES[i];return MODE_NAMES[0];}

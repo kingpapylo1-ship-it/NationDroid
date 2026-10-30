@@ -1,4 +1,4 @@
-# NationDroid 1.2
+# NationDroid 1.2.1
 
 A native, non-root Android launcher for Android 8.0 and newer, with four selectable home modes. No account, internet permission, advertising SDK or subscription is required.
 
@@ -14,6 +14,19 @@ Open the taskbar's Settings button, choose **Launcher mode**, select a layout an
 | Holo Sphere | Installed app icons distributed on a perspective sphere. Swipe to rotate, tap to launch, long press for app actions. Optional auto-spin, tilt/shake sensing, inertia and front-surface clipping. |
 
 The current mode defaults to Desktop for existing installations. Pins from 1.0/1.1 are preserved and appear in the alternate modes' dock. The **Apps list** button remains available as an accessible list alternative to the sphere. Keyboard arrows rotate the sphere and Enter launches its frontmost app.
+
+## Double-tap to lock (Android 9+)
+
+1. Open NationDroid **Settings** and enable **Double-tap to lock** under **Gestures**.
+2. Open **Accessibility lock service**, read the disclosure, and choose **Open Accessibility settings**.
+3. Under Android Accessibility's Installed apps / Downloaded apps, enable **NationDroid — double-tap lock**.
+4. Return home and double tap empty home-screen space to request Android's lock-screen action.
+
+Both the local toggle and user-enabled service are required. Disable the toggle or revoke the service in Android settings at any time. The service does not subscribe to accessibility events, retrieve screen contents, capture input, or dispatch gestures. It requests only `GLOBAL_ACTION_LOCK_SCREEN` following the launcher's gesture. No root or device-admin access is needed.
+
+App tiles, settings panels and taskbar controls do not trigger locking. Swipes, long presses, multitouch and interrupted tap pairs are excluded. The gesture is disabled during TalkBack touch exploration. Android 8 can run NationDroid, but this lock action requires Android 9 or newer. This gesture operates inside NationDroid, not on top of other apps.
+
+Accessibility permission is never enabled by importing a backup; it remains a separate Android user choice.
 
 ## Home-screen options
 
@@ -61,7 +74,7 @@ Use the downloadable debug APK, or open GitHub **Actions → Build NationDroid A
 
 To set it as Home, choose **Settings → Set as default launcher**. To switch back, use Android Settings → Apps → Default apps → Home app.
 
-The application ID remains `com.nationdroid.launcher`; version 1.2.0 has version code 3. An APK signed with the same certificate upgrades the previous version and retains local preferences. GitHub runners can generate different debug signing keys across builds; installing an APK with a different key requires removing the old installation and its preferences. Use a stable private release key for distribution; no key is committed.
+The application ID remains `com.nationdroid.launcher`; version 1.2.1 has version code 4. An APK signed with the same certificate upgrades the previous version and retains local preferences. GitHub runners can generate different debug signing keys across builds; installing an APK with a different key requires removing the old installation and its preferences. Use a stable private release key for distribution; no key is committed.
 
 ## Build and test
 
@@ -74,9 +87,9 @@ bash scripts/check.sh
 
 APK: `app/build/outputs/apk/debug/app-debug.apk`.
 
-Checks cover search/grid/window rules, sphere distribution/rotation/damping, settings validation, Android activity lifecycle across four modes, settings navigation and Apply behavior, and backup round-trip/rejection. Robolectric tests run at API 28 and API 35. These tests do not replace device/visual testing, real sensor testing or manual Android permission/credential flows.
+Checks cover search/grid/window rules, sphere distribution/rotation/damping, settings validation, Android activity lifecycle across four modes, settings navigation and Apply behavior, and backup round-trip/rejection. Robolectric tests run at API 28 and API 35. Lock regression checks also cover empty-space taps in all four modes, ignoring shortcuts and TalkBack touch exploration, opt-in/service lifecycle, and rejecting swipes/long presses/canceled tap pairs. These tests do not replace device/visual testing, real sensor testing or manual Android permission/credential flows.
 
-Before release, test on a phone: each mode, search/pin/unpin, rotation, typing in search, sphere touch and tilt, motion disable, background/resume, custom app selection, hidden apps, credential confirm/cancel, notification access grant/revoke, wallpaper, backup/restore, and switching the default Home app.
+Before release, test on a phone: enable/revoke the Accessibility lock service, double-tap empty space, verify app taps/swipes do not lock, and then check each mode, search/pin/unpin, rotation, typing in search, sphere touch and tilt, motion disable, background/resume, custom app selection, hidden apps, credential confirm/cancel, notification access grant/revoke, wallpaper, backup/restore, and switching the default Home app.
 
 Standard Android SDK build tools target desktop hosts. A local build in ARM64 Termux needs a supported Android build environment; GitHub Actions supplies the desktop host.
 

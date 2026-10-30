@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">NationDroid</string>
+    <string name="lock_service_name">NationDroid — double-tap lock</string>
+    <string name="lock_service_description">Allows NationDroid to lock the device when you double tap empty home-screen space. Uses Android’s lock-screen action on Android 9 and newer. Does not read screen contents, capture input, or perform gestures. Enable Double-tap to lock in NationDroid settings as well.</string>
 </resources>

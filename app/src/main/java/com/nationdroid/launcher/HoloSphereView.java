@@ -135,6 +135,7 @@ public final class HoloSphereView extends View implements SensorEventListener, C
             }
         }
     }
+    boolean isEmptyAt(float x,float y) { return hit(x,y)==null; }
     private MainActivity.AppEntry hit(float x,float y) {
         for(int i=nodes.size()-1;i>=0;i--) {
             Node n=nodes.get(i);

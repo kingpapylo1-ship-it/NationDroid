@@ -7,7 +7,7 @@ import java.util.Set;
 /** Strictly validates supported local settings before a backup can change storage. */
 public final class SettingsRules {
     private SettingsRules() {}
-    private static final Set<String> BOOLEANS=new HashSet<>(Arrays.asList("wallpaper","dark","autoSpin","motion","surfaceClip","labels","topWidget","bottomDock","badges","sphereCustom"));
+    private static final Set<String> BOOLEANS=new HashSet<>(Arrays.asList("wallpaper","dark","autoSpin","motion","surfaceClip","labels","topWidget","bottomDock","badges","sphereCustom","doubleTapLock"));
     private static final Set<String> SLIDERS=new HashSet<>(Arrays.asList("iconSize","labelSize","contrast","sensitivity","damping","scale"));
     private static final Set<String> SETS=new HashSet<>(Arrays.asList("favorites","hidden","locked","sphereApps"));
     public static String type(String key){
