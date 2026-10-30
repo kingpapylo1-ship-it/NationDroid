@@ -144,3 +144,22 @@ Standard Android SDK build tools target desktop hosts. A local build in ARM64 Te
 ## Attribution
 
 This repository previously held only HyperDroid documentation and images. This is an independent native implementation, with its own blue wave drawing and shell icons. The retained `src/assets/` screenshots depict HyperDroid, not NationDroid. Original assets, license attribution and the historical privacy document are retained. See [NationDroid privacy notes](PrivacyPolicy/README.md).
+
+### Holographic startup welcome (1.6)
+The selected blue holographic NationDroid logo gently floats and pulses with
+“Created by ope-opa-nation” beneath it. The foreground welcome dismisses on tap
+or after 6.5 seconds, once per boot. Animation respects Android's disabled
+animator setting and stops when Home leaves the foreground.
+
+For automatic Home after reboot, install/open NationDroid and choose
+**Settings → Set as default launcher → NationDroid** in Android's Home picker.
+Android controls when Home appears, usually after unlocking. The boot receiver
+only records a pending welcome; it does not force a background activity.
+This is a launcher welcome animation using a rendered 3D image, not a replacement
+for Samsung's system boot animation or a real-time 3D model.
+
+
+### Version 1.6: live welcome and activity history
+The holographic sphere welcome includes “Created by ope-opa-nation” and a gentle animated pulse/float. Choose NationDroid as Android’s default Home app to open it after boot; the animation runs once on the first foreground Home visit and does not replace the system boot animation.
+
+Settings → Activity history provides an off-by-default local log of the last 500 launcher app-open requests. Logging can be paused and records deleted. With separately granted Android Usage Access, this page also reads up to 300 app foreground/background events from the last 24 hours, on demand. It does not record all device activity, messages, screen contents, passwords or keystrokes, and sends no history to websites. Android usage history is controlled by Android and is not deleted by clearing NationDroid history. Revoke Usage Access in Android settings. Activity history is excluded from launcher JSON export and Android backup.

@@ -62,6 +62,20 @@ public class BrowserWelcomeTest {
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500));assertNull(controller.get().getWindow().getDecorView().findViewWithTag("welcome-banner"));assertEquals(8,prefs.getInt("lastWelcomeBoot",-1));
         }
     }
+    @Test public void liveWelcomeHasCreatorCreditAndDismissesOnTapOrPause(){
+        Settings.Global.putInt(app.getContentResolver(),Settings.Global.BOOT_COUNT,20);
+        try(ActivityController<MainActivity> c=Robolectric.buildActivity(MainActivity.class).setup()){
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500));
+            View root=c.get().getWindow().getDecorView();View welcome=root.findViewWithTag("welcome-banner");
+            assertTrue(welcome instanceof LiveBootView);assertTrue(welcome.getContentDescription().toString().contains("Created by ope-opa-nation"));
+            welcome.performClick();assertNull(root.findViewWithTag("welcome-banner"));
+        }
+        Settings.Global.putInt(app.getContentResolver(),Settings.Global.BOOT_COUNT,21);
+        try(ActivityController<MainActivity> c=Robolectric.buildActivity(MainActivity.class).setup()){
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500));assertNotNull(c.get().getWindow().getDecorView().findViewWithTag("welcome-banner"));
+            c.pause();assertNull(c.get().getWindow().getDecorView().findViewWithTag("welcome-banner"));
+        }
+    }
     private static WebView findWeb(View v){if(v instanceof WebView)return (WebView)v;if(v instanceof ViewGroup){ViewGroup g=(ViewGroup)v;for(int i=0;i<g.getChildCount();i++){WebView result=findWeb(g.getChildAt(i));if(result!=null)return result;}}return null;}
     private static View find(View v,String label){if(label.equals(v.getContentDescription()))return v;if(v instanceof ViewGroup){ViewGroup g=(ViewGroup)v;for(int i=0;i<g.getChildCount();i++){View result=find(g.getChildAt(i),label);if(result!=null)return result;}}return null;}
 }

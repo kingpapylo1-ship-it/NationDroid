@@ -95,6 +95,7 @@ public final class LauncherOptionsActivity extends Activity {
         card("NationDroid Browser","Tabs, DuckDuckGo search, bookmarks and clear browsing data",()->open(new Intent(this,BrowserActivity.class)));
         toggle("Welcome after reboot","Show once when NationDroid first opens each boot","welcomeEnabled",true,false);
         card("Welcome message",prefs.getString("welcomeMessage",WelcomeRules.DEFAULT),this::editWelcome);
+        card("Activity history","Opt-in local launcher records and Android app usage",()->open(new Intent(this,ActivityHistoryActivity.class)));
         section("DEVICE CONTROLS");
         card("Device Admin, Accessibility & pinning","Navigation shortcuts, optional admin locking and user-confirmed screen pinning",()->open(new Intent(this,DeviceControlsActivity.class)));
         section("GESTURES");
@@ -134,7 +135,7 @@ public final class LauncherOptionsActivity extends Activity {
         section("BACKUP & RESTORE");
         card("Export settings","Save modes, pins and preferences to a JSON file",()->openForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json").putExtra(Intent.EXTRA_TITLE,"NationDroid-settings.json"),201));
         card("Restore settings","Import a NationDroid JSON backup",()->openForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json"),202));
-        section("ABOUT");note("NationDroid 1.5.0 · All implemented options are available without a subscription. No third-party launcher code or premium entitlement is included. Device private-space management and third-party widgets are not implemented.");
+        section("ABOUT");note("NationDroid 1.6.0 · All implemented options are available without a subscription. No third-party launcher code or premium entitlement is included. Device private-space management and third-party widgets are not implemented.");
     }
     private void modePage(){
         note("CHOOSE HOW YOUR HOME SCREEN LOOKS");

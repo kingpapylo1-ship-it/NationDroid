@@ -24,3 +24,9 @@ These notes describe the native NationDroid implementation in this repository, n
 For questions or bug reports, use the repository's GitHub Issues. Do not include personal device data in public issues.
 
 The historical HyperDroid document is retained in [HYPERDROID-ORIGINAL.md](HYPERDROID-ORIGINAL.md). It does not describe NationDroid.
+
+
+### Version 1.6: live welcome and activity history
+The holographic sphere welcome includes “Created by ope-opa-nation” and a gentle animated pulse/float. Choose NationDroid as Android’s default Home app to open it after boot; the animation runs once on the first foreground Home visit and does not replace the system boot animation.
+
+Settings → Activity history provides an off-by-default local log of the last 500 launcher app-open requests. Logging can be paused and records deleted. With separately granted Android Usage Access, this page also reads up to 300 app foreground/background events from the last 24 hours, on demand. It does not record all device activity, messages, screen contents, passwords or keystrokes, and sends no history to websites. Android usage history is controlled by Android and is not deleted by clearing NationDroid history. Revoke Usage Access in Android settings. Activity history is excluded from launcher JSON export and Android backup.
