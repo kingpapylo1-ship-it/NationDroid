@@ -1,61 +1,50 @@
-# HyperDroid - PC Launcher
-Native desktop experience on your android device.
+# NationDroid
 
-## Get
-<a href="https://play.google.com/store/apps/details?id=com.binary.hyperdroid">
-  <img src="src/assets/playstore_link.svg" alt="Build" />
-</a>
+A native, non-root Android home launcher for Android 8.0 and newer. This repository previously contained only HyperDroid documentation and images. The `app/` directory is a new, independent implementation; it does not contain HyperDroid's source code.
 
-<table>
-  <thead>
-    <tr>
-      <th colspan="2">Screenshots</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center;">
-        <img src="src/assets/screen_1.webp" alt="App's main screen with StartMenu" width="350">
-      </td>
-      <td style="text-align: center;">
-        <img src="src/assets/screen_4.webp" alt="Settings system" width="350">
-      </td>
-    </tr>
-    <tr>
-      <td style="text-align: center;">
-        <img src="src/assets/screen_5.webp" alt="File Manager" width="350">
-      </td>
-      <td style="text-align: center;">
-        <img src="src/assets/screen_3.webp" alt="Settings colors" width="350">
-      </td>
-    </tr>
-  </tbody>
-</table>
+## Implemented
 
-## Features
+- Home screen with clock, date and pinned applications.
+- Installed app drawer with name and package search.
+- Long press to pin/unpin, open Android app info or request uninstall.
+- Pins and grid preferences saved locally across restarts.
+- Adaptive grid, portrait/landscape support and keyboard-focusable controls.
+- Default home selection using Android's Home role on Android 10+.
+- System wallpaper picker and optional wallpaper background.
+- Refresh after returning to the launcher and after app installation/removal.
+- No account, root, internet permission, analytics or advertising SDK.
 
-### ✨ **User-Friendly Interface**  
-<sup>Intuitive desktop-style interface optimized for both touch input and external peripherals (keyboard, mouse, etc.).</sup>
+Android apps open using the system's normal activity/window behavior. This version does not implement arbitrary floating app windows, widgets, a file manager, icon editing, or work-profile app launching. The retained `src/assets/` screenshots show the original HyperDroid product, **not this implementation**.
 
-### 🪟 **Floating Window Support**  
-<sup>Launch installed WebApps in resizable, floating windows for enhanced multitasking.</sup>
+## Get an APK from GitHub (no PC required)
 
-### ⚙️ **Customizable Display Density**  
-<sup>Adjust screen scaling to suit your preferences and display size.</sup>
+1. Open this repository's **Actions** tab and select **Build NationDroid APK**.
+2. Open a successful run for the branch containing this implementation. If necessary, use **Run workflow** after the workflow is on the default branch.
+3. Download **NationDroid-debug-apk**, unzip it, and open `app-debug.apk` on Android.
+4. Allow installation from the browser/file manager when Android asks.
+5. Open NationDroid, then choose **Settings → Set as default launcher**.
 
-### 🌍 **Multi-Language Support**  
-<sup>Available in multiple languages to ensure a more accessible experience for all users.</sup>
+The workflow produces an installable debug APK, not a Play Store release. GitHub's hosted runner may generate a different debug signing key between builds; updating an installed APK may require uninstalling the earlier version (which removes its pins). Use a stable private release key for distribution. No signing secrets are included.
 
-### 📁 **Built-in File Manager**  
-<sup>Manage your files easily with a clean and user-friendly file explorer.</sup>
+## Build locally
 
-### 🎨 **Editable App Icons and Names**  
-<sup>Personalize your experience by renaming apps and changing their icons.</sup>
+Requires JDK 17 and Android SDK platform 35/build-tools 35.0.0. Android Studio can open the project. The included Gradle wrapper downloads Gradle 8.9 and verifies its distribution checksum.
 
-### 📱 **Set as Default Launcher**  
-<sup>Optionally set **HyperDroid** as your system’s default launcher for seamless integration.</sup>
+Set `ANDROID_HOME` to the installed Android SDK directory, or create an untracked `local.properties` containing `sdk.dir=/absolute/path/to/android-sdk`.
 
-## Links
-<a href="https://github.com/windows-ui/HyperDroid/tree/main/PrivacyPolicy">
-  <img src="https://img.shields.io/badge/Privacy%20Policy-View-blue?style=for-the-badge&logo=polywork&logoColor=white" style="height:40px;">
-</a>
+```sh
+bash scripts/check.sh
+./gradlew --no-daemon lintDebug assembleDebug
+```
+
+Output: `app/build/outputs/apk/debug/app-debug.apk`.
+
+The standard Android SDK build tools target desktop hosts. A complete local build directly in Termux on ARM64 requires a separately supported Android build environment; the GitHub workflow avoids that requirement.
+
+## Device checks before release
+
+The pure Java checks cover search behavior and grid sizing. Lint and compilation run in GitHub Actions. A real-device test is still required: choose NationDroid as Home; open/search/pin an app; rotate the screen; restart the launcher; install/remove an app; try wallpaper, app info and uninstall; verify system gestures and keyboard insets. To switch back, open Android Settings → Apps → Default apps → Home app and choose your previous launcher.
+
+## Privacy and attribution
+
+See [NationDroid privacy notes](PrivacyPolicy/README.md). The original HyperDroid privacy document is preserved separately as historical material. Original image assets and the existing MIT license attribution remain in the repository.
