@@ -66,6 +66,13 @@ public final class MainActivity extends Activity {
     private EditText search;
     private TextView appStatus;
     private boolean registered, loading, reloadRequested;
+    private HomeModesView homeModes;
+    private boolean resumed;
+    private int optionsRevision;
+    private AppEntry pendingLaunch;
+    private final BroadcastReceiver badgesChanged = new BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) { invalidateTree(screen); }
+    };
     private String settingsSection = "System";
     private LinearLayout settingsContent;
     private final List<TextView> sidebarItems = new ArrayList<>();
@@ -90,6 +97,7 @@ public final class MainActivity extends Activity {
         favorites = new HashSet<>(prefs.getStringSet("favorites", new HashSet<>()));
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER);
         getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+        optionsRevision = prefs.getInt("revision",0);
         buildDesktop();
         if (Build.VERSION.SDK_INT >= 33) getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
                 android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::backToDesktop);
@@ -100,7 +108,16 @@ public final class MainActivity extends Activity {
         filter.addDataScheme("package");
         if (Build.VERSION.SDK_INT >= 33) registerReceiver(packages, filter, Context.RECEIVER_EXPORTED);
         else registerReceiver(packages, filter);
+        registerBadgesReceiver();
         registered = true;
+    }
+
+    @android.annotation.SuppressLint("UnspecifiedRegisterReceiverFlag")
+    private void registerBadgesReceiver() {
+        IntentFilter badgesFilter = new IntentFilter(NotificationBadges.ACTION);
+        if (Build.VERSION.SDK_INT >= 33) registerReceiver(badgesChanged, badgesFilter, Context.RECEIVER_NOT_EXPORTED);
+        // Android 8–12 lacks NOT_EXPORTED. A signature permission restricts senders instead.
+        else registerReceiver(badgesChanged, badgesFilter, "com.nationdroid.launcher.INTERNAL", null);
     }
 
     private void buildDesktop() {
@@ -137,7 +154,7 @@ public final class MainActivity extends Activity {
         });
         taskbar = row();
         taskbar.setPadding(dp(8), dp(3), dp(8), dp(3));
-        taskbar.setBackground(panel(0xeb252b36, 9));
+        taskbar.setBackground(panel("glass".equals(prefs.getString("surface","solid")) ? 0xb32b3548 : 0xff252b36, 9));
         LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(-1, dp(56));
         barParams.topMargin = dp(4);
         layout.addView(taskbar, barParams);
@@ -152,10 +169,8 @@ public final class MainActivity extends Activity {
         files.setOnClickListener(v -> openFiles());
         taskbar.addView(files, new LinearLayout.LayoutParams(dp(52), -1));
         settingsButton = iconButton("⚙", "Open launcher settings", 28);
-        settingsButton.setOnClickListener(v -> {
-            if (settingsWindow != null && settingsWindow.getVisibility() == View.VISIBLE) settingsWindow.minimize();
-            else showSettings("System");
-        });
+        settingsButton.setOnClickListener(v -> openOptions());
+        settingsButton.setOnLongClickListener(v -> { showSettings("System"); return true; });
         taskbar.addView(settingsButton, new LinearLayout.LayoutParams(dp(52), -1));
         LinearLayout right = row();
         right.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
@@ -173,6 +188,15 @@ public final class MainActivity extends Activity {
         // The icon layer is separate from the windows, so app refreshes preserve open panels.
         View old = workspace.findViewWithTag("desktop-icons");
         if (old != null) workspace.removeView(old);
+        homeModes = null;
+        if (!"desktop".equals(prefs.getString("mode","desktop"))) {
+            homeModes = new HomeModesView(this, visibleApps(), favorites, prefs, this::launch,
+                    app -> appMenu(workspace, app), this::openOptions, this::toggleStart);
+            homeModes.setActive(resumed);
+            homeModes.setTag("desktop-icons");
+            workspace.addView(homeModes, 0, new FrameLayout.LayoutParams(-1,-1));
+            return;
+        }
         ScrollView scroll = new ScrollView(this);
         scroll.setTag("desktop-icons");
         scroll.setFillViewport(true);
@@ -183,7 +207,7 @@ public final class MainActivity extends Activity {
         int cols = Math.max(1, usableWidth / dp(88));
         icons.setOrientation(GridLayout.VERTICAL);
         int count = 3;
-        for (AppEntry app : apps) if (favorites.contains(app.key())) count++;
+        for (AppEntry app : visibleApps()) if (favorites.contains(app.key())) count++;
         if (count > rows * cols) rows = (count + cols - 1) / cols;
         icons.setRowCount(rows);
         icons.setColumnCount(cols);
@@ -191,7 +215,7 @@ public final class MainActivity extends Activity {
         addDesktopIcon(icons, "Files", "▰", 0xffffcb57, null, this::openFiles, null);
         addDesktopIcon(icons, "Browser", "◎", 0xff8bc9ff, null,
                 () -> open(Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_BROWSER)), null);
-        for (AppEntry app : apps) if (favorites.contains(app.key())) {
+        for (AppEntry app : visibleApps()) if (favorites.contains(app.key())) {
             addDesktopIcon(icons, app.label, null, WHITE, app.icon, () -> launch(app), app);
         }
         scroll.addView(icons);
@@ -200,7 +224,7 @@ public final class MainActivity extends Activity {
     }
 
     private void addDesktopIcon(GridLayout grid, String label, String glyph, int color, Drawable image, Runnable click, AppEntry app) {
-        LinearLayout tile = appTile(label, glyph, color, image);
+        LinearLayout tile = appTile(label, glyph, color, image, app);
         tile.setOnClickListener(v -> click.run());
         tile.setOnLongClickListener(v -> {
             if (app != null) appMenu(tile, app); else desktopMenu();
@@ -211,23 +235,26 @@ public final class MainActivity extends Activity {
         grid.addView(tile, params);
     }
 
-    private LinearLayout appTile(String label, String glyph, int color, Drawable image) {
+    private LinearLayout appTile(String label, String glyph, int color, Drawable image, AppEntry entry) {
         LinearLayout tile = column();
         tile.setGravity(Gravity.CENTER);
         tile.setPadding(dp(3), dp(5), dp(3), dp(3));
         tile.setBackground(selectable());
         tile.setFocusable(true);
         if (image != null) {
-            ImageView icon = new ImageView(this);
-            icon.setImageDrawable(image);
-            tile.addView(icon, new LinearLayout.LayoutParams(dp(42), dp(42)));
+            View icon;
+            if (entry != null) icon = new StyledIconView(this,entry,prefs);
+            else { ImageView fallback = new ImageView(this); fallback.setImageDrawable(image); icon=fallback; }
+            int iconSize=dp(Math.round(30+prefs.getInt("iconSize",55)*.25f));
+            tile.addView(icon, new LinearLayout.LayoutParams(iconSize,iconSize));
         } else {
             String kind = "▣".equals(glyph) ? "device" : "▰".equals(glyph) ? "files" : "browser";
             ImageView icon = new ImageView(this);
             icon.setImageDrawable(new ShellIcon(kind));
             tile.addView(icon, new LinearLayout.LayoutParams(dp(46), dp(46)));
         }
-        TextView name = text(label, 11, WHITE);
+        TextView name = text(label, Math.round(8+prefs.getInt("labelSize",50)*.1f), WHITE);
+        name.setVisibility(prefs.getBoolean("labels",true)?View.VISIBLE:View.GONE);
         name.setGravity(Gravity.CENTER);
         name.setShadowLayer(dp(2), 0, dp(1), 0xff000000);
         name.setMaxLines(2);
@@ -291,9 +318,9 @@ public final class MainActivity extends Activity {
         int cols = AppRules.columns(Math.round(width / getResources().getDisplayMetrics().density), 6);
         startGrid.setColumnCount(cols);
         int count = 0;
-        for (AppEntry app : apps) {
+        for (AppEntry app : visibleApps()) {
             if (!AppRules.matches(app.label, app.component.getPackageName(), search.getText().toString())) continue;
-            LinearLayout tile = appTile(app.label, null, WHITE, app.icon);
+            LinearLayout tile = appTile(app.label, null, WHITE, app.icon, app);
             tile.setOnClickListener(v -> { startWindow.minimize(); launch(app); });
             tile.setOnLongClickListener(v -> { appMenu(tile, app); return true; });
             GridLayout.LayoutParams p = new GridLayout.LayoutParams();
@@ -379,6 +406,7 @@ public final class MainActivity extends Activity {
                 card("Connected devices", "Open Android connection settings", () -> open(new Intent(Settings.ACTION_WIRELESS_SETTINGS)));
                 break;
             case "Personalize":
+                card("Launcher modes & home options", "Desktop, Classic, Minimal and Holo Sphere", this::openOptions);
                 card("Profile name", prefs.getString("profileName", "King Nation"), this::renameProfile);
                 card("Blue waves", "Use the built-in NationDroid wallpaper", () -> { prefs.edit().putBoolean("wallpaper", false).apply(); recreate(); });
                 card("System wallpaper", "Show your current Android wallpaper", () -> { prefs.edit().putBoolean("wallpaper", true).apply(); recreate(); });
@@ -409,7 +437,7 @@ public final class MainActivity extends Activity {
                                 .setPositiveButton("OK", null).show());
                 break;
             default:
-                card("NationDroid 1.1.0", "Independent native Android desktop launcher", () -> {});
+                card("NationDroid 1.2.0", "Independent native Android desktop launcher", () -> {});
                 card("Android " + Build.VERSION.RELEASE, Build.MANUFACTURER + " " + Build.MODEL, () -> open(new Intent(Settings.ACTION_DEVICE_INFO_SETTINGS)));
                 break;
         }
@@ -444,8 +472,8 @@ public final class MainActivity extends Activity {
 
     private void desktopMenu() {
         new AlertDialog.Builder(this).setTitle("Desktop")
-                .setItems(new String[]{"Open Start menu", "Personalize", "Set as default launcher", "Refresh apps"}, (d, i) -> {
-                    if (i==0) toggleStart(); else if (i==1) showSettings("Personalize");
+                .setItems(new String[]{"Open Start menu", "Launcher settings", "Set as default launcher", "Refresh apps"}, (d, i) -> {
+                    if (i==0) toggleStart(); else if (i==1) openOptions();
                     else if (i==2) defaultHome(); else loadApps();
                 }).show();
     }
@@ -463,7 +491,7 @@ public final class MainActivity extends Activity {
                 for (ResolveInfo info:pm.queryIntentActivities(query, 0)) {
                     if (info.activityInfo==null || getPackageName().equals(info.activityInfo.packageName)) continue;
                     ComponentName component=new ComponentName(info.activityInfo.packageName, info.activityInfo.name);
-                    if (seen.add(component.flattenToString())) found.add(new AppEntry(info.loadLabel(pm).toString(),component,info.loadIcon(pm)));
+                    if (seen.add(component.flattenToString())) found.add(new AppEntry(info.loadLabel(pm).toString(),component,info.loadIcon(pm),info.activityInfo.applicationInfo.category));
                 }
                 Collator collator=Collator.getInstance(); found.sort((a,b)->collator.compare(a.label,b.label));
             } catch (RuntimeException e) { failed=true; }
@@ -493,6 +521,18 @@ public final class MainActivity extends Activity {
         menu.show();
     }
     private void launch(AppEntry app) {
+        if (prefs.getStringSet("hidden", new HashSet<>()).contains(app.key())) return;
+        if (prefs.getStringSet("locked", new HashSet<>()).contains(app.key())) {
+            android.app.KeyguardManager keyguard = (android.app.KeyguardManager)getSystemService(KEYGUARD_SERVICE);
+            Intent confirm = keyguard.createConfirmDeviceCredentialIntent("Open " + app.label, "Confirm your device credential to launch this app from NationDroid.");
+            if (confirm == null) { toast("Set up a device screen lock to open apps with launch confirmation."); return; }
+            pendingLaunch = app;
+            try { startActivityForResult(confirm,200); } catch (android.content.ActivityNotFoundException | SecurityException e) { pendingLaunch=null; toast("Device confirmation is unavailable."); }
+            return;
+        }
+        launchConfirmed(app);
+    }
+    private void launchConfirmed(AppEntry app) {
         open(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).setComponent(app.component)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED));
     }
@@ -503,6 +543,11 @@ public final class MainActivity extends Activity {
     }
     @Override protected void onActivityResult(int request,int result,Intent data) {
         super.onActivityResult(request,result,data);
+        if (request==200) {
+            AppEntry app=pendingLaunch; pendingLaunch=null;
+            if (result==RESULT_OK && app!=null && !prefs.getStringSet("hidden",new HashSet<>()).contains(app.key())) launchConfirmed(app);
+            return;
+        }
         if (request==100 && result==RESULT_OK && data!=null && data.getData()!=null) {
             String type=getContentResolver().getType(data.getData());
             open(new Intent(Intent.ACTION_VIEW).setDataAndType(data.getData(), type==null ? "application/octet-stream" : type)
@@ -537,7 +582,7 @@ public final class MainActivity extends Activity {
     private LinearLayout column() { LinearLayout v=new LinearLayout(this);v.setOrientation(LinearLayout.VERTICAL);return v; }
     private LinearLayout row() { LinearLayout v=new LinearLayout(this);v.setOrientation(LinearLayout.HORIZONTAL);v.setGravity(Gravity.CENTER_VERTICAL);return v; }
     private TextView text(String value,int size,int color) {
-        TextView v=new TextView(this);v.setText(value);v.setTextSize(size);v.setTextColor(color);v.setGravity(Gravity.CENTER_VERTICAL);return v;
+        TextView v=new TextView(this);v.setText(value);v.setTextSize(size);v.setTextColor(color);v.setTypeface(LauncherStyle.font(prefs));v.setGravity(Gravity.CENTER_VERTICAL);return v;
     }
     private TextView action(String label,Runnable click) {
         TextView v=text(label,13,WHITE);v.setGravity(Gravity.CENTER);v.setPadding(dp(8),dp(8),dp(8),dp(8));
@@ -647,18 +692,42 @@ public final class MainActivity extends Activity {
         void minimize() {setVisibility(GONE);hideKeyboard();updateTaskbar();}
         void restore() {setVisibility(VISIBLE);bringToFront();fit();updateTaskbar();}
     }
+    private List<AppEntry> visibleApps() {
+        Set<String> hidden=prefs.getStringSet("hidden",new HashSet<>());
+        int category=prefs.getInt("category",-2);
+        List<AppEntry> visible=new ArrayList<>();
+        for(AppEntry app:apps) if(!hidden.contains(app.key()) && (category==-2 || (category==-1?app.category<0 || app.category>7:app.category==category)))visible.add(app);
+        return visible;
+    }
+    private void openOptions() { open(new Intent(this,LauncherOptionsActivity.class)); }
+    private void animateHome() {
+        if(workspace==null)return;
+        String animation=prefs.getString("animation","fade");
+        if("fade".equals(animation)){workspace.setAlpha(.25f);workspace.animate().alpha(1f).setDuration(220).start();}
+        else if("zoom".equals(animation)){workspace.setScaleX(.94f);workspace.setScaleY(.94f);workspace.animate().scaleX(1f).scaleY(1f).setDuration(240).start();}
+    }
+    private void invalidateTree(View v) {
+        if(v==null)return;v.invalidate();
+        if(v instanceof android.view.ViewGroup){android.view.ViewGroup group=(android.view.ViewGroup)v;for(int i=0;i<group.getChildCount();i++)invalidateTree(group.getChildAt(i));}
+    }
     private void updateTaskbar() {
         startButton.setBackground(startWindow!=null && startWindow.getVisibility()==View.VISIBLE?panel(0xff414957,7):selectable());
         settingsButton.setBackground(settingsWindow!=null && settingsWindow.getVisibility()==View.VISIBLE?panel(0xff414957,7):selectable());
     }
-    @Override protected void onResume() {super.onResume();handler.removeCallbacks(tick);handler.post(tick);loadApps();}
-    @Override protected void onPause() {handler.removeCallbacks(tick);super.onPause();}
+    @Override protected void onResume() {
+        super.onResume(); resumed=true;
+        if (prefs.getInt("revision",0)!=optionsRevision) { recreate(); return; }
+        if (homeModes!=null) homeModes.setActive(true);
+        handler.removeCallbacks(tick);handler.post(tick);loadApps();
+        animateHome();
+    }
+    @Override protected void onPause() {resumed=false;if(homeModes!=null)homeModes.setActive(false);handler.removeCallbacks(tick);super.onPause();}
     @Override protected void onNewIntent(Intent intent) {super.onNewIntent(intent);setIntent(intent);if(startWindow!=null)startWindow.minimize();if(settingsWindow!=null)settingsWindow.minimize();}
     @Override public void onBackPressed() {backToDesktop();}
-    @Override protected void onDestroy() {if(registered)unregisterReceiver(packages);handler.removeCallbacksAndMessages(null);worker.shutdownNow();super.onDestroy();}
-    private static final class AppEntry {
-        final String label;final ComponentName component;final Drawable icon;
-        AppEntry(String label,ComponentName component,Drawable icon) {this.label=label;this.component=component;this.icon=icon;}
+    @Override protected void onDestroy() {if(registered){unregisterReceiver(packages);unregisterReceiver(badgesChanged);}handler.removeCallbacksAndMessages(null);worker.shutdownNow();super.onDestroy();}
+    static final class AppEntry {
+        final String label;final ComponentName component;final Drawable icon;final int category;
+        AppEntry(String label,ComponentName component,Drawable icon,int category) {this.label=label;this.component=component;this.icon=icon;this.category=category;}
         String key() {return component.flattenToString();}
     }
 }
