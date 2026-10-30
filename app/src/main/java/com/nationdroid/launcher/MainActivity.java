@@ -79,6 +79,7 @@ public final class MainActivity extends Activity {
         prefs = getSharedPreferences("launcher", MODE_PRIVATE);
         favorites = new HashSet<>(prefs.getStringSet("favorites", new HashSet<>()));
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER);
+        getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
         buildUi();
         if (Build.VERSION.SDK_INT >= 33) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
