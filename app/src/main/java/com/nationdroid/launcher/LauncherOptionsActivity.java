@@ -113,10 +113,11 @@ public final class LauncherOptionsActivity extends Activity {
         section("GENERAL");
         card("App categories",categoryName(prefs.getInt("category",-2)),()->new AlertDialog.Builder(this).setTitle("Show app category").setItems(new String[]{"All apps","Games","Audio","Video","Images","Social","News","Maps","Productivity","Other / uncategorized"},(d,i)->{
             prefs.edit().putInt("category",i==0?-2:i==9?-1:i-1).apply();changed();render();}).show());
-        toggle("Notification dots","Optional access; only active notification counts are held in memory","badges",false,false);
+        toggle("Notification dots","Optional notification access; enable the private panel separately","badges",false,false);
         card("Notification access","Grant or revoke Android's notification-listener access",()->open(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)));
         card("Device",Build.MANUFACTURER+" "+Build.MODEL+" · Android "+Build.VERSION.RELEASE,()->open(new Intent(Settings.ACTION_DEVICE_INFO_SETTINGS)));
         section("PRIVACY & SECURITY");
+        card("Private notifications","App + matched contact name only; all message content hidden inside NationDroid",()->open(new Intent(this,PrivateNotificationsActivity.class)));
         card("Hidden apps","Hide apps from NationDroid only",()->selectApps("Hidden apps","hidden",false));
         card("Launch confirmation","Require your device credential when opening selected apps from NationDroid",()->{
             KeyguardManager k=(KeyguardManager)getSystemService(KEYGUARD_SERVICE);
@@ -127,7 +128,7 @@ public final class LauncherOptionsActivity extends Activity {
         section("BACKUP & RESTORE");
         card("Export settings","Save modes, pins and preferences to a JSON file",()->openForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json").putExtra(Intent.EXTRA_TITLE,"NationDroid-settings.json"),201));
         card("Restore settings","Import a NationDroid JSON backup",()->openForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json"),202));
-        section("ABOUT");note("NationDroid 1.2.1 · All implemented options are available without a subscription. No third-party launcher code or premium entitlement is included. Device private-space management and third-party widgets are not implemented.");
+        section("ABOUT");note("NationDroid 1.3.0 · All implemented options are available without a subscription. No third-party launcher code or premium entitlement is included. Device private-space management and third-party widgets are not implemented.");
     }
     private void modePage(){
         note("CHOOSE HOW YOUR HOME SCREEN LOOKS");

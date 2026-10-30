@@ -173,6 +173,9 @@ public final class MainActivity extends Activity {
         files.setTextColor(0xffffca53);
         files.setOnClickListener(v -> openFiles());
         taskbar.addView(files, new LinearLayout.LayoutParams(dp(52), -1));
+        TextView notifications = iconButton("🔔", "Private notifications", 23);
+        notifications.setOnClickListener(v -> open(new Intent(this,PrivateNotificationsActivity.class)));
+        taskbar.addView(notifications,new LinearLayout.LayoutParams(dp(48),-1));
         settingsButton = iconButton("⚙", "Open launcher settings", 28);
         settingsButton.setOnClickListener(v -> openOptions());
         settingsButton.setOnLongClickListener(v -> { showSettings("System"); return true; });
@@ -442,7 +445,7 @@ public final class MainActivity extends Activity {
                                 .setPositiveButton("OK", null).show());
                 break;
             default:
-                card("NationDroid 1.2.1", "Independent native Android desktop launcher", () -> {});
+                card("NationDroid 1.3.0", "Independent native Android desktop launcher", () -> {});
                 card("Android " + Build.VERSION.RELEASE, Build.MANUFACTURER + " " + Build.MODEL, () -> open(new Intent(Settings.ACTION_DEVICE_INFO_SETTINGS)));
                 break;
         }

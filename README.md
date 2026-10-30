@@ -1,6 +1,24 @@
-# NationDroid 1.2.1
+# NationDroid 1.3.0
 
 A native, non-root Android launcher for Android 8.0 and newer, with four selectable home modes. No account, internet permission, advertising SDK or subscription is required.
+
+## Private notifications
+
+Open the taskbar bell or **Settings → Private notifications**. Enable the private panel, grant Android Notification access, and optionally grant Contacts permission to resolve saved sender names.
+
+The read-only panel always shows only the application label and a sanitized saved-contact name. Message bodies, numbers, attachments, contact photos, message actions and notification remote views are never displayed in the panel, including while the phone is unlocked.
+
+| Sender | Panel output |
+| --- | --- |
+| Phone/identifier matched to a saved contact named Dolapo | App name + Dolapo |
+| Unsaved number or unmatched sender | App name + Unknown sender |
+| Contacts permission denied or unavailable metadata | App name + Unknown sender |
+
+Sender identifiers come from the latest MessagingStyle sender, or message/call title metadata where a contacts match is possible. A number identifier that does not match Contacts cannot fall back to a claimed display name. If an app does not publish usable sender metadata, the panel stays at Unknown sender even if the person is saved. A name match is not cryptographic sender authentication. Digits, email addresses and URI-shaped contact names are excluded from displayed sender labels; this can simplify unusual saved names.
+
+Only app labels, sanitized sender labels, package identifiers and sorting times for up to 200 active notifications are retained in process memory. There is no message history, body storage, sender-number cache or notification-data backup. The store is cleared on listener disconnection or feature opt-out; contact-change events invalidate matched labels and trigger fresh lookup. Contact permission is checked again before showing names.
+
+The original Android notifications are not canceled, replaced or rewritten. **Android's notification shade, lock-screen previews and details inside WhatsApp/Phone/Contacts remain under Android and those apps' controls.** The panel includes notification/security settings links and setup guidance; it cannot automatically enforce an app-name/sender-only system notification shade while unlocked.
 
 ## Launcher modes
 
@@ -49,7 +67,7 @@ The in-settings sphere preview uses available app icons. Preview sensing and idl
 - None, fade or zoom return-to-home animations.
 - Built-in blue wave wallpaper, current Android wallpaper, or Android's wallpaper picker.
 - App-category filtering based on Android's declared categories. Apps without a supported declared category appear under Other; there is no invented category assignment.
-- Optional notification dots for active notifications. Enable the switch and grant NationDroid access under **Notification access**. Counts stay in memory; notification text is not retained or uploaded.
+- Optional notification dots for active notifications. Enable the switch and grant NationDroid access under **Notification access**. The private panel is a separate opt-in; counts and sanitized labels stay in memory, and message text is not retained or uploaded.
 - Hidden-app selection for NationDroid's app lists and pins.
 - Optional Android device-credential confirmation for selected apps launched from NationDroid's app lists/pins.
 - JSON settings export/restore through Android's document provider. Backups include local settings and selected app identifiers, not app data. Imports validate the format, value types, ranges and component identifiers before replacing preferences.
@@ -74,7 +92,7 @@ Use the downloadable debug APK, or open GitHub **Actions → Build NationDroid A
 
 To set it as Home, choose **Settings → Set as default launcher**. To switch back, use Android Settings → Apps → Default apps → Home app.
 
-The application ID remains `com.nationdroid.launcher`; version 1.2.1 has version code 4. An APK signed with the same certificate upgrades the previous version and retains local preferences. GitHub runners can generate different debug signing keys across builds; installing an APK with a different key requires removing the old installation and its preferences. Use a stable private release key for distribution; no key is committed.
+The application ID remains `com.nationdroid.launcher`; version 1.3.0 has version code 5. An APK signed with the same certificate upgrades the previous version and retains local preferences. GitHub runners can generate different debug signing keys across builds; installing an APK with a different key requires removing the old installation and its preferences. Use a stable private release key for distribution; no key is committed.
 
 ## Build and test
 
@@ -89,7 +107,7 @@ APK: `app/build/outputs/apk/debug/app-debug.apk`.
 
 Checks cover search/grid/window rules, sphere distribution/rotation/damping, settings validation, Android activity lifecycle across four modes, settings navigation and Apply behavior, and backup round-trip/rejection. Robolectric tests run at API 28 and API 35. Lock regression checks also cover empty-space taps in all four modes, ignoring shortcuts and TalkBack touch exploration, opt-in/service lifecycle, and rejecting swipes/long presses/canceled tap pairs. These tests do not replace device/visual testing, real sensor testing or manual Android permission/credential flows.
 
-Before release, test on a phone: enable/revoke the Accessibility lock service, double-tap empty space, verify app taps/swipes do not lock, and then check each mode, search/pin/unpin, rotation, typing in search, sphere touch and tilt, motion disable, background/resume, custom app selection, hidden apps, credential confirm/cancel, notification access grant/revoke, wallpaper, backup/restore, and switching the default Home app.
+Before release, test the private panel with actual messaging apps, saved/unsaved senders, contact updates and permission revocation, and confirm original Android notifications remain unchanged. Also test on a phone: enable/revoke the Accessibility lock service, double-tap empty space, verify app taps/swipes do not lock, and then check each mode, search/pin/unpin, rotation, typing in search, sphere touch and tilt, motion disable, background/resume, custom app selection, hidden apps, credential confirm/cancel, notification access grant/revoke, wallpaper, backup/restore, and switching the default Home app.
 
 Standard Android SDK build tools target desktop hosts. A local build in ARM64 Termux needs a supported Android build environment; GitHub Actions supplies the desktop host.
 
