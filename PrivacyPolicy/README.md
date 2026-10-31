@@ -1,63 +1,32 @@
-# Privacy Policy
+# NationDroid privacy notes
 
-**HyperDroid - PC Launcher** is a free app developed by Vivek Verma at no cost and is intended for use as is.
+These notes describe the native NationDroid implementation in this repository, not HyperDroid or another reference launcher.
 
-This page is used to inform visitors regarding my policies with the collection, use, and disclosure of Personal Information if anyone decided to use my Service.
+- NationDroid queries launchable apps to display names, icons, declared Android categories and launch activities. The inventory is held in memory.
+- Pinned, hidden, launch-confirmation and sphere app selections; the optional profile display name; and UI preferences are stored in app-private SharedPreferences. The app disables automatic backup and excludes these preferences from Android data extraction.
+- The app now requests Internet access for its built-in WebView browser. It has no advertising, analytics or crash-reporting SDK. Launcher inventory, contact/notification metadata, settings and sensor readings are not uploaded or bridged to websites. Visiting a website or submitting a DuckDuckGo query sends normal network requests to those services, which can receive searches, IP information and first-party cookies under their own policies.
+- Browser cookies, cache and site storage use Android WebView's app-local profile. Bookmarks are stored separately in local browser preferences. Clear browsing data removes cookies/cache/site storage/tab history/HTTP authentication and closes tabs, while keeping bookmarks and downloaded files. Third-party cookies and local-file/content navigation are disabled; camera, microphone and location requests are denied. User-selected file uploads are explicitly chosen through Android's document picker. Downloads are individually confirmed and handled by Android DownloadManager. This is not a claim of anonymous browsing, incognito isolation or DuckDuckGo's proprietary tracking protection.
+- RECEIVE_BOOT_COMPLETED is used only to mark a welcome for the next foreground launcher visit. The app also compares Android's boot count to a local shown marker to show a greeting once per boot. It does not launch itself over other apps or the lock screen on boot. The optional greeting uses the local profile name/template; boot markers are not backed up. JSON backups can contain the greeting preference/template, but not browser cookies/history/bookmarks or downloaded files.
+- The optional double-tap lock feature uses an Accessibility service to request Android's global lock-screen action on Android 9+. Separately enabled device controls can request only the allowlisted Home, Back, Recents, notifications, quick settings, power-menu and lock actions when the user taps a corresponding control. The double-tap path requires its in-app toggle and either user-enabled Accessibility locking or separately activated Device Admin locking. Its configuration requests no screen-content retrieval or event subscription, and it does not record input, inspect other apps, capture the screen or dispatch gestures. The gesture is detected only inside NationDroid and is disabled while TalkBack touch exploration is active. Revoke the service under Android Accessibility settings at any time. A preferences backup cannot grant Accessibility access.
+- Motion sensing uses gravity/accelerometer readings while the visible sphere home is active. Readings affect rotation only and are not saved. Sensors are unregistered when the home is detached, hidden or paused.
+- Optional notification dots and the separate private notification panel require Android notification-listener access. Badge-only mode retains aggregate active counts by package in memory. When you explicitly enable the private panel, it uses sender identifiers from the latest MessagingStyle message or message/call metadata to resolve a saved contact name, subject to Contacts permission. Only app/package labels, sanitized matched contact labels and sorting times for up to 200 active notifications are retained in memory. It does not store message bodies, attachments, raw sender identifiers, phone-number caches, action intents or notification history.
+- Optional READ_CONTACTS access is requested only after you choose to enable saved-contact names. Queries read contacts locally to resolve names by phone/contact URI or exact display-name match. Unmatched or unavailable identifiers and denied Contacts access produce Unknown sender. Numeric/email/URI-shaped contact names are masked or simplified. Names are matched from metadata, not authenticated sender identities. Contact changes invalidate panel entries; revoking permission redacts names when reading panel snapshots. There is no Contacts write permission.
+- The panel is read-only and always hides content and numbers while unlocked as well. Original Android notifications are left untouched. It cannot redact Android's notification shade or screens inside other apps. It provides links to Android privacy settings; those settings and other apps' data practices still apply.
+- Disabling the private panel or disconnecting notification access clears its in-memory entries. Revoke Contacts permission and/or Android notification access at any time. Preferences backups may include the panel toggle but do not include contact names, notifications, message data or Android permission grants.
+- Launch confirmation delegates authentication to Android's device-credential screen. NationDroid does not receive or store the PIN, password or pattern. This only gates launches from the launcher app-list/pin path; it is not system-wide app locking or a secure private space. Hidden apps are hidden only inside NationDroid.
+- Settings export writes a user-chosen JSON document containing preferences and selected app identifiers. Import validates the document before replacing local preferences. The chosen document provider controls storage/synchronization of that file; back up only to a destination you trust. App data and authentication credentials are not part of the backup.
+- App launch, app info, uninstall, wallpaper, document opening, default Home selection and Android settings delegate to Android or another app, whose own data practices apply.
+- `REQUEST_DELETE_PACKAGES` permits a user-requested uninstall confirmation dialog. The signature-level internal permission protects notification-dot update broadcasts within the application.
+- Optional Device Admin activation requests only the screen-lock policy. It does not request data-wipe, password-reset, camera-disable or device-owner privileges. Users can deactivate admin in NationDroid's controls or Android settings; admin should be deactivated before uninstalling. It provides an alternative lock mechanism, not access to other apps' private data.
+- Screen pinning is explicitly requested by the user and handled by Android. It is not an enforced device-owner kiosk and does not disable Android's unpin gesture. JSON preferences cannot grant admin/Accessibility privileges or silently activate pinning.
+- Uninstalling NationDroid or clearing its storage removes its local preferences. Exported JSON backups remain wherever you saved them until you remove them yourself.
 
-If you choose to use my service, then you agree to the collection and use of information in relation to this policy. The Personal Information that I collect is used for providing and improving the Service. I will not use or share your information with anyone except as described in this Privacy Policy.
+For questions or bug reports, use the repository's GitHub Issues. Do not include personal device data in public issues.
 
-The terms used in this Privacy Policy have the same meanings as in our Terms and Conditions, which are accessible at **HyperDroid - PC Launcher** unless otherwise defined in this Privacy Policy.
+The historical HyperDroid document is retained in [HYPERDROID-ORIGINAL.md](HYPERDROID-ORIGINAL.md). It does not describe NationDroid.
 
-**Information Collection and Use**
 
-For a better experience, while using our Service, I may require you to provide us with certain personally identifiable information, including but not limited to collects no information. The information that I request will be retained on your device and is not collected by me in any way.
+### Version 1.6: live welcome and activity history
+The holographic sphere welcome includes “Created by ope-opa-nation” and a gentle animated pulse/float. Choose NationDroid as Android’s default Home app to open it after boot; the animation runs once on the first foreground Home visit and does not replace the system boot animation.
 
-The app does use third-party services that may collect information used to identify you.
-
-Link to the privacy policy of third-party service providers used by the app
-
-*   [Google Play Services](https://www.google.com/policies/privacy/)
-*   [AdMob](https://support.google.com/admob/answer/6128543?hl=en)
-
-**Log Data**
-
-I want to inform you that whenever you use my Service, in a case of an error in the app I collect data and information (through third-party products) on your phone called Log Data. This Log Data may include information such as your device Internet Protocol (“IP”) address, device name, operating system version, the configuration of the app when utilizing my Service, the time and date of your use of the Service, and other statistics.
-
-**Cookies**
-
-Cookies are files with a small amount of data that are commonly used as anonymous unique identifiers. These are sent to your browser from the websites that you visit and are stored on your device's internal memory.
-
-This Service does not use these “cookies” explicitly. However, the app may use third-party code and libraries that use “cookies” to collect information and improve their services. You have the option to either accept or refuse these cookies and know when a cookie is being sent to your device. If you choose to refuse our cookies, you may not be able to use some portions of this Service.
-
-**Service Providers**
-
-I may employ third-party companies and individuals due to the following reasons:
-
-*   To facilitate our Service;
-*   To provide the Service on our behalf;
-*   To perform Service-related services; or
-*   To assist us in analyzing how our Service is used.
-
-I want to inform users of this Service that these third parties have access to their Personal Information. The reason is to perform the tasks assigned to them on our behalf. However, they are obligated not to disclose or use the information for any other purpose.
-
-**Security**
-
-I value your trust in providing us your Personal Information, thus we are striving to use commercially acceptable means of protecting it. But remember that no method of transmission over the internet, or method of electronic storage is 100% secure and reliable, and I cannot guarantee its absolute security.
-
-**Links to Other Sites**
-
-This Service may contain links to other sites. If you click on a third-party link, you will be directed to that site. Note that these external sites are not operated by me. Therefore, I strongly advise you to review the Privacy Policy of these websites. I have no control over and assume no responsibility for the content, privacy policies, or practices of any third-party sites or services.
-
-**Children’s Privacy**
-
-These Services do not address anyone under the age of 13. I do not knowingly collect personally identifiable information from children under 13 years of age. In the case I discover that a child under 13 has provided me with personal information, I immediately delete this from our servers. If you are a parent or guardian and you are aware that your child has provided us with personal information, please contact me so that I will be able to do the necessary actions.
-
-**Changes to This Privacy Policy**
-
-I may update our Privacy Policy from time to time. Thus, you are advised to review this page periodically for any changes. I will notify you of any changes by posting the new Privacy Policy on this page.
-
-This policy is effective as of 2024-05-26
-
-**Contact Us**
-
-If you have any questions or suggestions about my Privacy Policy, do not hesitate to contact me at binary.metaverse@gmail.com.
+Settings → Activity history provides an off-by-default local log of the last 500 launcher app-open requests. Logging can be paused and records deleted. With separately granted Android Usage Access, this page also reads up to 300 app foreground/background events from the last 24 hours, on demand. It does not record all device activity, messages, screen contents, passwords or keystrokes, and sends no history to websites. Android usage history is controlled by Android and is not deleted by clearing NationDroid history. Revoke Usage Access in Android settings. Activity history is excluded from launcher JSON export and Android backup.

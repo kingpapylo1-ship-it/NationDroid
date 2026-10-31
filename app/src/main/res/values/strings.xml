@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">NationDroid</string>
+    <string name="lock_service_name">NationDroid — lock and device controls</string>
+    <string name="lock_service_description">Provides optional double-tap locking and user-invoked Home, Back, Recents, notifications, quick settings, power-menu and lock shortcuts. Enable the corresponding options inside NationDroid. Does not read screen contents, capture input, or dispatch gestures. Does not provide root or access to other apps’ private data.</string>
+    <string name="admin_name">NationDroid — optional lock admin</string>
+    <string name="admin_description">Optional screen-lock authority only. No data-wipe, password-reset or full-device access is requested. Deactivate before uninstalling.</string>
+</resources>

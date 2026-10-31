@@ -1,61 +1,165 @@
-# HyperDroid - PC Launcher
-Native desktop experience on your android device.
+# NationDroid 1.5.0
 
-## Get
-<a href="https://play.google.com/store/apps/details?id=com.binary.hyperdroid">
-  <img src="src/assets/playstore_link.svg" alt="Build" />
-</a>
+A native, non-root Android launcher for Android 8.0 and newer, with four selectable home modes. No account, advertising SDK or subscription is required. Internet access is used by the built-in browser; launcher preferences and private notification data are not sent to websites.
 
-<table>
-  <thead>
-    <tr>
-      <th colspan="2">Screenshots</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center;">
-        <img src="src/assets/screen_1.webp" alt="App's main screen with StartMenu" width="350">
-      </td>
-      <td style="text-align: center;">
-        <img src="src/assets/screen_4.webp" alt="Settings system" width="350">
-      </td>
-    </tr>
-    <tr>
-      <td style="text-align: center;">
-        <img src="src/assets/screen_5.webp" alt="File Manager" width="350">
-      </td>
-      <td style="text-align: center;">
-        <img src="src/assets/screen_3.webp" alt="Settings colors" width="350">
-      </td>
-    </tr>
-  </tbody>
-</table>
+## Built-in NationDroid Browser
 
-## Features
+The desktop Browser shortcut and **Settings → NationDroid Browser** open the built-in Android System WebView browser. It uses DuckDuckGo's website for the home page and searches. This is an independent browser, not the official DuckDuckGo application or its tracking-protection engine.
 
-### ✨ **User-Friendly Interface**  
-<sup>Intuitive desktop-style interface optimized for both touch input and external peripherals (keyboard, mouse, etc.).</sup>
+- Address/search bar; up to six tabs with close/select controls; Back, Forward and Reload.
+- Bookmarks stored locally, find in page, text zoom, user-invoked sharing and Android printing.
+- Confirmed HTTPS downloads using Android DownloadManager and a Downloads link. Android 10+ saves to public Downloads; Android 8/9 saves to the app's external Downloads directory, which can be removed on uninstall. Cookie-authenticated and blob downloads are not implemented; use another browser for those.
+- User-selected document uploads through Android's file picker. Websites cannot read files or Contacts automatically. Website camera/microphone and geolocation requests are denied.
+- Third-party cookies, file/content navigation and mixed content are blocked. Android Safe Browsing is enabled when supported by the installed WebView. TLS certificate errors are canceled, not bypassed. Typed HTTP URLs are upgraded to HTTPS; HTTP-only websites are unsupported.
+- Clear browsing data closes all tabs and clears WebView cookies, cache, tab history, site storage and saved HTTP authentication. Bookmarks and downloaded files are retained; bookmarks can be removed separately.
+- An optional default-browser chooser, plus native error/retry and form-resubmission confirmation screens.
 
-### 🪟 **Floating Window Support**  
-<sup>Launch installed WebApps in resizable, floating windows for enhanced multitasking.</sup>
+Browsing needs connectivity and a working/up-to-date Android System WebView. Websites/search providers receive normal network requests, searches, IP information and first-party cookies; third-party-cookie blocking does not guarantee anonymity or complete tracking protection. No incognito/profile isolation or DuckDuckGo tracker-blocking engine is claimed. Browser data is separate from launcher JSON settings backups.
 
-### ⚙️ **Customizable Display Density**  
-<sup>Adjust screen scaling to suit your preferences and display size.</sup>
+## Welcome after reboot
 
-### 🌍 **Multi-Language Support**  
-<sup>Available in multiple languages to ensure a more accessible experience for all users.</sup>
+A customizable banner appears once on the first foreground NationDroid home visit per device boot. When NationDroid is the default Home app, this normally occurs after unlocking following a reboot. It does not open an activity from the background or bypass the lock screen.
 
-### 📁 **Built-in File Manager**  
-<sup>Manage your files easily with a clean and user-friendly file explorer.</sup>
+Under **Settings → Welcome after reboot**, enable/disable it or edit **Welcome message**. Use `{name}` to insert the local profile name. The banner can be tapped to dismiss and otherwise disappears after eight seconds. Boot-count tracking avoids repeating it on ordinary Home visits; a BOOT_COMPLETED receiver provides a fallback pending marker. Boot markers are not part of settings backups. Android can defer boot delivery for force-stopped/unopened apps; the foreground boot-count check handles the next launcher visit where available.
 
-### 🎨 **Editable App Icons and Names**  
-<sup>Personalize your experience by renaming apps and changing their icons.</sup>
+## Device Admin, Accessibility and screen pinning
 
-### 📱 **Set as Default Launcher**  
-<sup>Optionally set **HyperDroid** as your system’s default launcher for seamless integration.</sup>
+Open **Settings → Device Admin, Accessibility & pinning**.
 
-## Links
-<a href="https://github.com/windows-ui/HyperDroid/tree/main/PrivacyPolicy">
-  <img src="https://img.shields.io/badge/Privacy%20Policy-View-blue?style=for-the-badge&logo=polywork&logoColor=white" style="height:40px;">
-</a>
+- **Accessibility shortcuts:** explicitly enable the local toggle and the Android service named **NationDroid — lock and device controls**. Buttons request Home, Back, Recents, notification shade, quick settings, power menu and screen lock. Unlisted actions are rejected. The service still requests no window-content retrieval, event subscriptions, input capture or gesture dispatch. Disable the toggle or revoke Accessibility access at any time.
+- **Optional Device Admin locking:** a separate Android activation screen requests only the `force-lock` policy. No wipe-data, password-reset, camera-disable or device-owner policy is requested. You can deactivate it on the same controls page or in Android settings; deactivate before uninstalling. Admin locking can require your PIN/password/pattern at the next unlock. Explicit Lock device now and double-tap locking can use active admin authority when Accessibility locking is unavailable.
+- **Kiosk-style screen pinning:** request pinning of the NationDroid task with local confirmation and Android's normal screen-pinning prompt. Exit through the controls page or Android's standard unpin gesture (device-dependent, commonly Back + Recents or swipe up and hold). Pinning can block launching other apps until you unpin. This does not provision device ownership, silently enforce a kiosk, suppress Android's escape gesture or lock down the entire device.
+
+These permissions do not grant root, access to another app's private storage, universal notification redaction, or full device access. Android can restrict global actions while pinned. Permission grants, admin activation and active pinning are never restored from JSON settings backups. Screen-pinning behavior and admin activation/deactivation need testing on the actual phone.
+
+## Private notifications
+
+Open the taskbar bell or **Settings → Private notifications**. Enable the private panel, grant Android Notification access, and optionally grant Contacts permission to resolve saved sender names.
+
+The read-only panel always shows only the application label and a sanitized saved-contact name. Message bodies, numbers, attachments, contact photos, message actions and notification remote views are never displayed in the panel, including while the phone is unlocked.
+
+| Sender | Panel output |
+| --- | --- |
+| Phone/identifier matched to a saved contact named Dolapo | App name + Dolapo |
+| Unsaved number or unmatched sender | App name + Unknown sender |
+| Contacts permission denied or unavailable metadata | App name + Unknown sender |
+
+Sender identifiers come from the latest MessagingStyle sender, or message/call title metadata where a contacts match is possible. A number identifier that does not match Contacts cannot fall back to a claimed display name. If an app does not publish usable sender metadata, the panel stays at Unknown sender even if the person is saved. A name match is not cryptographic sender authentication. Digits, email addresses and URI-shaped contact names are excluded from displayed sender labels; this can simplify unusual saved names.
+
+Only app labels, sanitized sender labels, package identifiers and sorting times for up to 200 active notifications are retained in process memory. There is no message history, body storage, sender-number cache or notification-data backup. The store is cleared on listener disconnection or feature opt-out; contact-change events invalidate matched labels and trigger fresh lookup. Contact permission is checked again before showing names.
+
+The original Android notifications are not canceled, replaced or rewritten. **Android's notification shade, lock-screen previews and details inside WhatsApp/Phone/Contacts remain under Android and those apps' controls.** The panel includes notification/security settings links and setup guidance; it cannot automatically enforce an app-name/sender-only system notification shade while unlocked.
+
+## Launcher modes
+
+Open the taskbar's Settings button, choose **Launcher mode**, select a layout and tap **Apply now**.
+
+| Mode | Implemented behavior |
+| --- | --- |
+| Desktop | Blue wave background, desktop shortcuts, taskbar, Start panel and launcher-owned Settings window. |
+| Classic layout | Horizontal pages of installed apps, search and a scrollable pinned-app dock. |
+| Minimal list | Searchable alphabetic app list with a letter index. |
+| Holo Sphere | Installed app icons distributed on a perspective sphere. Swipe to rotate, tap to launch, long press for app actions. Optional auto-spin, tilt/shake sensing, inertia and front-surface clipping. |
+
+The current mode defaults to Desktop for existing installations. Pins from 1.0/1.1 are preserved and appear in the alternate modes' dock. The **Apps list** button remains available as an accessible list alternative to the sphere. Keyboard arrows rotate the sphere and Enter launches its frontmost app.
+
+## Double-tap to lock (Android 9+)
+
+1. Open NationDroid **Settings** and enable **Double-tap to lock** under **Gestures**.
+2. Open **Accessibility lock service**, read the disclosure, and choose **Open Accessibility settings**.
+3. Under Android Accessibility's Installed apps / Downloaded apps, enable **NationDroid — lock and device controls**.
+4. Return home and double tap empty home-screen space to request Android's lock-screen action.
+
+The local toggle plus either the user-enabled Accessibility service or separately activated Device Admin locking is required. Disable the toggle or revoke the relevant Android authority at any time. The service does not subscribe to accessibility events, retrieve screen contents, capture input, or dispatch gestures. The double-tap path requests `GLOBAL_ACTION_LOCK_SCREEN`; the separately enabled device-controls page also supports the allowlisted manual navigation actions above. Device Admin is optional and can serve as an alternate locking mechanism; root is not needed.
+
+App tiles, settings panels and taskbar controls do not trigger locking. Swipes, long presses, multitouch and interrupted tap pairs are excluded. The gesture is disabled during TalkBack touch exploration. Android 8 can run NationDroid, but this lock action requires Android 9 or newer. This gesture operates inside NationDroid, not on top of other apps.
+
+Accessibility permission is never enabled by importing a backup; it remains a separate Android user choice.
+
+## Home-screen options
+
+**Settings → Home screen options** includes:
+
+- Manage app sphere: choose which launchable app activities appear, or use all apps so new installations appear automatically.
+- Auto spin and motion sensing. Motion works without a special permission; if a motion sensor is absent, touch rotation still works. Sensor listeners and animation are stopped when the launcher is not visible.
+- 3D surface clipping, icon/label toggle, and smooth, linear or exponential depth scaling.
+- Top time/date widget and bottom pinned-app dock toggles for alternate home modes.
+- Icon size, label size, edge contrast, swipe sensitivity, inertia damping and sphere scale sliders, each with a reset control.
+
+The in-settings sphere preview uses available app icons. Preview sensing and idle animation are disabled. The top widget shows time/date; it does not access a calendar.
+
+## Style and general settings
+
+- Local Ocean, Violet and Forest theme presets and five accent colors.
+- Light/dark appearance for alternate home modes and the customization screen.
+- Rounded-square, circle or heptagon app-icon clipping; sans, serif or monospace fonts.
+- Solid or translucent home/taskbar surfaces. Translucency is implemented; this is not a compositor blur or a live refraction shader.
+- None, fade or zoom return-to-home animations.
+- Built-in blue wave wallpaper, current Android wallpaper, or Android's wallpaper picker.
+- App-category filtering based on Android's declared categories. Apps without a supported declared category appear under Other; there is no invented category assignment.
+- Optional notification dots for active notifications. Enable the switch and grant NationDroid access under **Notification access**. The private panel is a separate opt-in; counts and sanitized labels stay in memory, and message text is not retained or uploaded.
+- Hidden-app selection for NationDroid's app lists and pins.
+- Optional Android device-credential confirmation for selected apps launched from NationDroid's app lists/pins.
+- JSON settings export/restore through Android's document provider. Backups include local settings and selected app identifiers, not app data. Imports validate the format, value types, ranges and component identifiers before replacing preferences.
+
+**Privacy limits:** hiding is a launcher display preference, not a secure private space. Credential confirmation only gates the launcher's app-list/pin launch path; another launcher, notifications, Android system shortcuts or app-to-app intents can still open those apps. It does not lock or isolate another app's data. No third-party premium entitlement, private-space sandbox or third-party widget host is included.
+
+## Desktop features retained
+
+- This device, Files and built-in Browser shortcuts, plus pinned app shortcuts.
+- Bottom taskbar with Start, Files, Settings and a clock.
+- Start provides installed-app search and pin/info/uninstall actions.
+- Native internal Start/desktop Settings windows: minimize, close, maximize/restore, title-caption dragging and bottom-right resize grip.
+- Tap the taskbar Settings button for the new customization screen. Long press it for the original desktop system panel.
+- The desktop system panel displays actual device and storage information. Bluetooth, Wi-Fi, display, security, language and default Home actions open Android settings.
+- Files opens Android's document browser and an installed viewer for the selected file. It is not a private file manager.
+
+Only launcher-owned panels use NationDroid's internal windows. Installed Android apps open using normal system activity/window behavior. Arbitrary floating Android app windows, work-profile app launching, app icon/name editing, agenda access and third-party widgets are not implemented.
+
+## Install on Android
+
+Use the downloadable debug APK, or open GitHub **Actions → Build NationDroid APK**, choose a successful run, download **NationDroid-debug-apk**, unzip and install `app-debug.apk`.
+
+To set it as Home, choose **Settings → Set as default launcher**. To switch back, use Android Settings → Apps → Default apps → Home app.
+
+The application ID remains `com.nationdroid.launcher`; version 1.5.0 has version code 7. An APK signed with the same certificate upgrades the previous version and retains local preferences. GitHub runners can generate different debug signing keys across builds; installing an APK with a different key requires removing the old installation and its preferences. Use a stable private release key for distribution; no key is committed.
+
+## Build and test
+
+Requires JDK 17 and Android SDK platform 35/build-tools 35.0.0. Open in Android Studio or use the checksum-pinned Gradle 8.9 wrapper. Set `ANDROID_HOME`, or create an untracked `local.properties` with `sdk.dir=/absolute/path/to/android-sdk`.
+
+```sh
+bash scripts/check.sh
+./gradlew --no-daemon clean testDebugUnitTest lintDebug assembleDebug
+```
+
+APK: `app/build/outputs/apk/debug/app-debug.apk`.
+
+Checks cover search/grid/window rules, sphere distribution/rotation/damping, settings validation, Android activity lifecycle across four modes, settings navigation and Apply behavior, and backup round-trip/rejection. Robolectric tests run at API 28 and API 35. Lock regression checks also cover empty-space taps in all four modes, ignoring shortcuts and TalkBack touch exploration, opt-in/service lifecycle, and rejecting swipes/long presses/canceled tap pairs. These tests do not replace device/visual testing, real sensor testing or manual Android permission/credential flows.
+
+Before release, test the private panel with actual messaging apps, saved/unsaved senders, contact updates and permission revocation, and confirm original Android notifications remain unchanged. Also test on a phone: enable/revoke the Accessibility lock service, double-tap empty space, verify app taps/swipes do not lock, and then check each mode, search/pin/unpin, rotation, typing in search, sphere touch and tilt, motion disable, background/resume, custom app selection, hidden apps, credential confirm/cancel, notification access grant/revoke, wallpaper, backup/restore, and switching the default Home app.
+
+Standard Android SDK build tools target desktop hosts. A local build in ARM64 Termux needs a supported Android build environment; GitHub Actions supplies the desktop host.
+
+## Attribution
+
+This repository previously held only HyperDroid documentation and images. This is an independent native implementation, with its own blue wave drawing and shell icons. The retained `src/assets/` screenshots depict HyperDroid, not NationDroid. Original assets, license attribution and the historical privacy document are retained. See [NationDroid privacy notes](PrivacyPolicy/README.md).
+
+### Holographic startup welcome (1.6)
+The selected blue holographic NationDroid logo gently floats and pulses with
+“Created by ope-opa-nation” beneath it. The foreground welcome dismisses on tap
+or after 6.5 seconds, once per boot. Animation respects Android's disabled
+animator setting and stops when Home leaves the foreground.
+
+For automatic Home after reboot, install/open NationDroid and choose
+**Settings → Set as default launcher → NationDroid** in Android's Home picker.
+Android controls when Home appears, usually after unlocking. The boot receiver
+only records a pending welcome; it does not force a background activity.
+This is a launcher welcome animation using a rendered 3D image, not a replacement
+for Samsung's system boot animation or a real-time 3D model.
+
+
+### Version 1.6: live welcome and activity history
+The holographic sphere welcome includes “Created by ope-opa-nation” and a gentle animated pulse/float. Choose NationDroid as Android’s default Home app to open it after boot; the animation runs once on the first foreground Home visit and does not replace the system boot animation.
+
+Settings → Activity history provides an off-by-default local log of the last 500 launcher app-open requests. Logging can be paused and records deleted. With separately granted Android Usage Access, this page also reads up to 300 app foreground/background events from the last 24 hours, on demand. It does not record all device activity, messages, screen contents, passwords or keystrokes, and sends no history to websites. Android usage history is controlled by Android and is not deleted by clearing NationDroid history. Revoke Usage Access in Android settings. Activity history is excluded from launcher JSON export and Android backup.
