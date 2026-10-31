@@ -52,6 +52,7 @@ import java.util.concurrent.Executors;
 
 /** Desktop shell. Only this launcher's own panels run inside its windows. */
 public final class MainActivity extends Activity {
+    private static final int REQUEST_HOME_ROLE = 201;
     private static final int WHITE = 0xfff4f5f7, MUTED = 0xffb4b8c0, BLUE = 0xff65ceff;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
@@ -570,7 +571,13 @@ public final class MainActivity extends Activity {
             RoleManager roles=getSystemService(RoleManager.class);
             if (roles!=null && roles.isRoleAvailable(RoleManager.ROLE_HOME)) {
                 if (roles.isRoleHeld(RoleManager.ROLE_HOME)) { toast("NationDroid is your default launcher.");return; }
-                open(roles.createRequestRoleIntent(RoleManager.ROLE_HOME));return;
+                // Role requests need a calling package, which startActivity() does not supply.
+                try {
+                    startActivityForResult(roles.createRequestRoleIntent(RoleManager.ROLE_HOME), REQUEST_HOME_ROLE);
+                    return;
+                } catch (android.content.ActivityNotFoundException | SecurityException e) {
+                    // Some devices lack a working role chooser; offer Android's Home settings.
+                }
             }
         }
         open(new Intent(Settings.ACTION_HOME_SETTINGS));
